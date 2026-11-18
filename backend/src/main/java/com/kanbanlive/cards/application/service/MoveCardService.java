@@ -5,6 +5,7 @@ import com.kanbanlive.cards.application.port.in.MoveCardUseCase;
 import com.kanbanlive.cards.application.port.out.CardRepository;
 import com.kanbanlive.cards.application.port.out.ListDirectory;
 import com.kanbanlive.cards.domain.model.Card;
+import com.kanbanlive.sharedkernel.application.BoardChangePublisher;
 import com.kanbanlive.sharedkernel.application.Clock;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.ValidationException;
@@ -22,8 +23,11 @@ public class MoveCardService implements MoveCardUseCase {
     private final CardRepository cards;
     private final ListDirectory lists;
     private final Clock clock;
+    private final CardEvents events;
 
-    public MoveCardService(CardRepository cards, ListDirectory lists, Clock clock) {
+    public MoveCardService(CardRepository cards, ListDirectory lists, Clock clock,
+            BoardChangePublisher publisher) {
+        this.events = new CardEvents(lists, publisher);
         this.cards = cards;
         this.lists = lists;
         this.clock = clock;
@@ -36,6 +40,7 @@ public class MoveCardService implements MoveCardUseCase {
         if (!lists.exists(command.targetListId())) {
             throw new NotFoundException("list " + command.targetListId() + " not found");
         }
+        UUID fromListId = card.listId();
         FractionalIndex position;
         try {
             position = allocate(card, command);
@@ -46,7 +51,9 @@ public class MoveCardService implements MoveCardUseCase {
                     .orElseThrow(() -> new NotFoundException("card " + command.cardId() + " not found"));
             position = allocate(card, command);
         }
-        return CardSummaries.of(cards.save(card.moveTo(command.targetListId(), position, clock.now())));
+        CardSummary saved = CardSummaries.of(cards.save(card.moveTo(command.targetListId(), position, clock.now())));
+        events.moved(saved, fromListId);
+        return saved;
     }
 
     private FractionalIndex allocate(Card card, MoveCardCommand command) {

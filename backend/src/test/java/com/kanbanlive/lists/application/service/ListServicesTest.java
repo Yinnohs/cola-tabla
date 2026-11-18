@@ -17,6 +17,7 @@ import com.kanbanlive.sharedkernel.position.FractionalIndex;
 import com.kanbanlive.sharedkernel.position.PositionAssignment;
 import com.kanbanlive.testsupport.FixedClock;
 import com.kanbanlive.testsupport.SequentialIdGenerator;
+import com.kanbanlive.testsupport.RecordingBoardChanges;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -90,14 +91,33 @@ class ListServicesTest {
     final InMemoryListRepository repo = new InMemoryListRepository();
     final Set<UUID> knownBoards = new HashSet<>();
     final BoardDirectory directory = knownBoards::contains;
+    final RecordingBoardChanges changes = new RecordingBoardChanges();
     final FixedClock clock = new FixedClock(Instant.parse("2026-01-01T00:00:00Z"));
-    final CreateListService create = new CreateListService(repo, directory, new SequentialIdGenerator(), clock);
-    final RenameListService rename = new RenameListService(repo, clock);
-    final MoveListService move = new MoveListService(repo, clock);
+    final CreateListService create = new CreateListService(repo, directory, new SequentialIdGenerator(), clock, changes);
+    final RenameListService rename = new RenameListService(repo, clock, changes);
+    final MoveListService move = new MoveListService(repo, clock, changes);
     final UUID board = UUID.randomUUID();
 
     ListServicesTest() {
         knownBoards.add(board);
+    }
+
+    @Test
+    void mutationsRecordTheirBoardEvents() {
+        ListSummary a = newList("A");
+        ListSummary b = newList("B");
+        rename.execute(new RenameListCommand(a.id(), "AA", a.version()));
+        move.execute(new MoveListCommand(b.id(), null, a.id()));
+
+        assertThat(changes.types()).containsExactly("list.created", "list.created", "list.updated", "list.moved");
+        assertThat(changes.changes).allMatch(c -> c.boardId().equals(board));
+    }
+
+    @Test
+    void failedMutationRecordsNothing() {
+        assertThatThrownBy(() -> create.execute(new CreateListCommand(UUID.randomUUID(), "x")))
+                .isInstanceOf(NotFoundException.class);
+        assertThat(changes.changes).isEmpty();
     }
 
     ListSummary newList(String name) {

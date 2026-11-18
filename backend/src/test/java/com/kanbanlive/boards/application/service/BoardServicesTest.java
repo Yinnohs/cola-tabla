@@ -15,6 +15,7 @@ import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import com.kanbanlive.sharedkernel.domain.ValidationException;
 import com.kanbanlive.testsupport.FixedClock;
 import com.kanbanlive.testsupport.SequentialIdGenerator;
+import com.kanbanlive.testsupport.RecordingBoardChanges;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,9 +60,10 @@ class BoardServicesTest {
     final InMemoryBoardRepository repo = new InMemoryBoardRepository();
     final Set<UUID> knownWorkspaces = new HashSet<>();
     final WorkspaceDirectory directory = knownWorkspaces::contains;
+    final RecordingBoardChanges changes = new RecordingBoardChanges();
     final FixedClock clock = new FixedClock(Instant.parse("2026-01-01T00:00:00Z"));
     final CreateBoardService create = new CreateBoardService(repo, directory, new SequentialIdGenerator(), clock);
-    final RenameBoardService rename = new RenameBoardService(repo, clock);
+    final RenameBoardService rename = new RenameBoardService(repo, clock, changes);
     final UUID ws = UUID.randomUUID();
 
     BoardServicesTest() {
@@ -74,6 +76,17 @@ class BoardServicesTest {
         assertThat(s.workspaceId()).isEqualTo(ws);
         assertThat(s.name()).isEqualTo("Sprint");
         assertThat(repo.store).containsKey(s.id());
+    }
+
+    @Test
+    void renameRecordsABoardUpdatedEventButCreateDoesNot() {
+        BoardSummary created = create.execute(new CreateBoardCommand(ws, "Old"));
+        assertThat(changes.changes).isEmpty();
+
+        rename.execute(new RenameBoardCommand(created.id(), "New", created.version()));
+
+        assertThat(changes.types()).containsExactly("board.updated");
+        assertThat(changes.changes.get(0).boardId()).isEqualTo(created.id());
     }
 
     @Test

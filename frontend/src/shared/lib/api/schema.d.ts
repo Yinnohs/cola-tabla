@@ -453,7 +453,10 @@ export interface operations {
     createBoard: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 workspaceId: string;
             };
@@ -479,7 +482,10 @@ export interface operations {
     moveList: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 listId: string;
             };
@@ -505,7 +511,10 @@ export interface operations {
     createCard: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 listId: string;
             };
@@ -531,7 +540,10 @@ export interface operations {
     moveCard: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 cardId: string;
             };
@@ -557,7 +569,10 @@ export interface operations {
     createList: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 boardId: string;
             };
@@ -610,7 +625,10 @@ export interface operations {
     renameList: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 listId: string;
             };
@@ -636,7 +654,10 @@ export interface operations {
     deleteCard: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 cardId: string;
             };
@@ -656,7 +677,10 @@ export interface operations {
     updateCard: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 cardId: string;
             };
@@ -704,7 +728,10 @@ export interface operations {
     renameBoard: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco. */
+                "X-Client-Id"?: string;
+            };
             path: {
                 boardId: string;
             };

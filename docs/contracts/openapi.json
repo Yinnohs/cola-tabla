@@ -138,6 +138,16 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
+          }
         } ],
         "requestBody" : {
           "content" : {
@@ -175,6 +185,16 @@
           "schema" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
           }
         } ],
         "requestBody" : {
@@ -214,6 +234,16 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
+          }
         } ],
         "requestBody" : {
           "content" : {
@@ -252,6 +282,16 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
+          }
         } ],
         "requestBody" : {
           "content" : {
@@ -289,6 +329,16 @@
           "schema" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
           }
         } ],
         "requestBody" : {
@@ -373,6 +423,16 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
+          }
         } ],
         "requestBody" : {
           "content" : {
@@ -411,6 +471,16 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
+          }
         } ],
         "responses" : {
           "204" : {
@@ -429,6 +499,16 @@
           "schema" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
           }
         } ],
         "requestBody" : {
@@ -493,6 +573,16 @@
           "schema" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }, {
+          "name" : "X-Client-Id",
+          "in" : "header",
+          "description" : "Identificador de la instancia de cliente; se devuelve en el evento de tiempo real resultante para que el origen ignore su eco.",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$"
           }
         } ],
         "requestBody" : {

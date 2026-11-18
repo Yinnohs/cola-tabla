@@ -38,6 +38,14 @@ public class Perms {
         return check(id, Permission.ADMIN);
     }
 
+    /**
+     * Igual que {@link #canView(UUID)} para un usuario explicito: lo usa el canal STOMP, donde no hay SecurityContext
+     * en el momento del SUBSCRIBE.
+     */
+    public boolean canViewAs(String userId, UUID id) {
+        return !securityEnabled || access.execute(userId, id, Permission.VIEW);
+    }
+
     private boolean check(UUID id, Permission permission) {
         if (!securityEnabled) {
             return true;

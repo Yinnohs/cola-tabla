@@ -18,6 +18,7 @@ import com.kanbanlive.sharedkernel.position.FractionalIndex;
 import com.kanbanlive.sharedkernel.position.PositionAssignment;
 import com.kanbanlive.testsupport.FixedClock;
 import com.kanbanlive.testsupport.SequentialIdGenerator;
+import com.kanbanlive.testsupport.RecordingBoardChanges;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -90,18 +91,48 @@ class CardServicesTest {
 
     final InMemoryCardRepository repo = new InMemoryCardRepository();
     final Set<UUID> knownLists = new HashSet<>();
-    final ListDirectory directory = knownLists::contains;
+    final UUID board = UUID.randomUUID();
+    final ListDirectory directory = new ListDirectory() {
+        @Override
+        public boolean exists(UUID listId) {
+            return knownLists.contains(listId);
+        }
+
+        @Override
+        public Optional<UUID> boardIdOf(UUID listId) {
+            return knownLists.contains(listId) ? Optional.of(board) : Optional.empty();
+        }
+    };
+    final RecordingBoardChanges changes = new RecordingBoardChanges();
     final FixedClock clock = new FixedClock(Instant.parse("2026-01-01T00:00:00Z"));
-    final CreateCardService create = new CreateCardService(repo, directory, new SequentialIdGenerator(), clock);
-    final UpdateCardService update = new UpdateCardService(repo, clock);
-    final MoveCardService move = new MoveCardService(repo, directory, clock);
-    final DeleteCardService delete = new DeleteCardService(repo);
+    final CreateCardService create = new CreateCardService(repo, directory, new SequentialIdGenerator(), clock, changes);
+    final UpdateCardService update = new UpdateCardService(repo, directory, clock, changes);
+    final MoveCardService move = new MoveCardService(repo, directory, clock, changes);
+    final DeleteCardService delete = new DeleteCardService(repo, directory, changes);
     final UUID list = UUID.randomUUID();
     final UUID otherList = UUID.randomUUID();
 
     CardServicesTest() {
         knownLists.add(list);
         knownLists.add(otherList);
+    }
+
+    @Test
+    void mutationsRecordTheirBoardEvents() {
+        CardSummary card = newCard(list, "a");
+        update.execute(new UpdateCardCommand(card.id(), "b", null, card.version()));
+        move.execute(new MoveCardCommand(card.id(), otherList, null, null));
+        delete.execute(new DeleteCardCommand(card.id()));
+
+        assertThat(changes.types()).containsExactly("card.created", "card.updated", "card.moved", "card.deleted");
+        assertThat(changes.changes).allMatch(c -> c.boardId().equals(board));
+    }
+
+    @Test
+    void failedMutationRecordsNothing() {
+        assertThatThrownBy(() -> delete.execute(new DeleteCardCommand(UUID.randomUUID())))
+                .isInstanceOf(NotFoundException.class);
+        assertThat(changes.changes).isEmpty();
     }
 
     CardSummary newCard(UUID listId, String title) {

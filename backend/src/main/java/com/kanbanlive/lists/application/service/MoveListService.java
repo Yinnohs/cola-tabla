@@ -4,6 +4,7 @@ import com.kanbanlive.lists.application.port.in.ListSummary;
 import com.kanbanlive.lists.application.port.in.MoveListUseCase;
 import com.kanbanlive.lists.application.port.out.ListRepository;
 import com.kanbanlive.lists.domain.model.BoardList;
+import com.kanbanlive.sharedkernel.application.BoardChangePublisher;
 import com.kanbanlive.sharedkernel.application.Clock;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.ValidationException;
@@ -20,8 +21,10 @@ public class MoveListService implements MoveListUseCase {
 
     private final ListRepository lists;
     private final Clock clock;
+    private final BoardChangePublisher publisher;
 
-    public MoveListService(ListRepository lists, Clock clock) {
+    public MoveListService(ListRepository lists, Clock clock, BoardChangePublisher publisher) {
+        this.publisher = publisher;
         this.lists = lists;
         this.clock = clock;
     }
@@ -40,7 +43,9 @@ public class MoveListService implements MoveListUseCase {
                     .orElseThrow(() -> new NotFoundException("list " + command.listId() + " not found"));
             position = allocate(list, command);
         }
-        return ListSummaries.of(lists.save(list.moveTo(position, clock.now())));
+        ListSummary saved = ListSummaries.of(lists.save(list.moveTo(position, clock.now())));
+        publisher.publish(saved.boardId(), "list.moved", java.util.Map.of("list", saved));
+        return saved;
     }
 
     private FractionalIndex allocate(BoardList list, MoveListCommand command) {

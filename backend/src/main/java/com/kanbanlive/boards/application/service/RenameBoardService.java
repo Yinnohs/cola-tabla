@@ -4,6 +4,7 @@ import com.kanbanlive.boards.application.port.in.BoardSummary;
 import com.kanbanlive.boards.application.port.in.RenameBoardUseCase;
 import com.kanbanlive.boards.application.port.out.BoardRepository;
 import com.kanbanlive.boards.domain.model.Board;
+import com.kanbanlive.sharedkernel.application.BoardChangePublisher;
 import com.kanbanlive.sharedkernel.application.Clock;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
@@ -16,8 +17,10 @@ public class RenameBoardService implements RenameBoardUseCase {
 
     private final BoardRepository boards;
     private final Clock clock;
+    private final BoardChangePublisher publisher;
 
-    public RenameBoardService(BoardRepository boards, Clock clock) {
+    public RenameBoardService(BoardRepository boards, Clock clock, BoardChangePublisher publisher) {
+        this.publisher = publisher;
         this.boards = boards;
         this.clock = clock;
     }
@@ -30,6 +33,8 @@ public class RenameBoardService implements RenameBoardUseCase {
             throw new StaleVersionException("board " + board.id() + " is at version " + board.version()
                     + ", expected " + command.expectedVersion());
         }
-        return BoardSummaries.of(boards.save(board.rename(command.name(), clock.now())));
+        BoardSummary saved = BoardSummaries.of(boards.save(board.rename(command.name(), clock.now())));
+        publisher.publish(saved.id(), "board.updated", java.util.Map.of("board", saved));
+        return saved;
     }
 }

@@ -4,6 +4,8 @@ import com.kanbanlive.cards.application.port.in.CardSummary;
 import com.kanbanlive.cards.application.port.in.UpdateCardUseCase;
 import com.kanbanlive.cards.application.port.out.CardRepository;
 import com.kanbanlive.cards.domain.model.Card;
+import com.kanbanlive.cards.application.port.out.ListDirectory;
+import com.kanbanlive.sharedkernel.application.BoardChangePublisher;
 import com.kanbanlive.sharedkernel.application.Clock;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
@@ -16,8 +18,11 @@ public class UpdateCardService implements UpdateCardUseCase {
 
     private final CardRepository cards;
     private final Clock clock;
+    private final CardEvents events;
 
-    public UpdateCardService(CardRepository cards, Clock clock) {
+    public UpdateCardService(CardRepository cards, ListDirectory lists, Clock clock,
+            BoardChangePublisher publisher) {
+        this.events = new CardEvents(lists, publisher);
         this.cards = cards;
         this.clock = clock;
     }
@@ -30,6 +35,8 @@ public class UpdateCardService implements UpdateCardUseCase {
             throw new StaleVersionException("card " + card.id() + " is at version " + card.version()
                     + ", expected " + command.expectedVersion());
         }
-        return CardSummaries.of(cards.save(card.update(command.title(), command.description(), clock.now())));
+        CardSummary saved = CardSummaries.of(cards.save(card.update(command.title(), command.description(), clock.now())));
+        events.updated(saved);
+        return saved;
     }
 }

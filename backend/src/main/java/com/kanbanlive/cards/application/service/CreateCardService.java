@@ -5,6 +5,7 @@ import com.kanbanlive.cards.application.port.in.CreateCardUseCase;
 import com.kanbanlive.cards.application.port.out.CardRepository;
 import com.kanbanlive.cards.application.port.out.ListDirectory;
 import com.kanbanlive.cards.domain.model.Card;
+import com.kanbanlive.sharedkernel.application.BoardChangePublisher;
 import com.kanbanlive.sharedkernel.application.Clock;
 import com.kanbanlive.sharedkernel.application.IdGenerator;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
@@ -23,8 +24,11 @@ public class CreateCardService implements CreateCardUseCase {
     private final ListDirectory lists;
     private final IdGenerator ids;
     private final Clock clock;
+    private final CardEvents events;
 
-    public CreateCardService(CardRepository cards, ListDirectory lists, IdGenerator ids, Clock clock) {
+    public CreateCardService(CardRepository cards, ListDirectory lists, IdGenerator ids, Clock clock,
+            BoardChangePublisher publisher) {
+        this.events = new CardEvents(lists, publisher);
         this.cards = cards;
         this.lists = lists;
         this.ids = ids;
@@ -45,7 +49,9 @@ public class CreateCardService implements CreateCardUseCase {
         }
         Card card = Card.create(ids.newId(), command.listId(), command.title(), command.description(), position,
                 clock.now());
-        return CardSummaries.of(cards.save(card));
+        CardSummary saved = CardSummaries.of(cards.save(card));
+        events.created(saved);
+        return saved;
     }
 
     private FractionalIndex appendPosition(UUID listId) {

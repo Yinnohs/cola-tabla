@@ -20,6 +20,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
                         // Documentacion OpenAPI: solo existe si springdoc esta habilitado (perfiles local/test).
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // Handshake WebSocket: el JWT viaja en la cabecera STOMP CONNECT, no en el upgrade HTTP;
+                        // lo valida StompAuthChannelInterceptor (platform.messaging).
+                        .requestMatchers("/ws", "/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
                 .csrf(csrf -> csrf.disable());
