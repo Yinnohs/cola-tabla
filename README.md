@@ -29,7 +29,7 @@ docker compose -f infra/docker-compose.yml up -d
 - Postgres: `localhost:5432` (db/user/password `kanban`)
 - Redis: `localhost:6379`
 - Keycloak: http://localhost:8180 (admin/admin; realm `kanban` importado)
-- Nginx: http://localhost:8000 (proxy a backend/frontend; solo útil con el perfil `app`; el backend local usa 8080)
+- Nginx: http://localhost:8000 (proxy a backend/frontend; **solo arranca con el perfil `app`**; el backend local usa 8080)
 
 Usuarios de desarrollo del realm `kanban`: `owner`, `editor`, `viewer` (contraseña = nombre de usuario).
 

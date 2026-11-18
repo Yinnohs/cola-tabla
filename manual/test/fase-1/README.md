@@ -18,7 +18,7 @@ Ficheros de esta carpeta:
 
 - JDK 21 (`java -version`), Docker con Compose v2, `curl` y bash (Git Bash en Windows). No hacen falta `jq` ni Python:
   los scripts solo usan `curl`, `grep` y `sed`.
-- Puertos libres: 5432 (Postgres), 6379 (Redis), 8180 (Keycloak), 8000 (nginx), 8080 (backend).
+- Puertos libres: 5432 (Postgres), 6379 (Redis), 8180 (Keycloak), 8000 (nginx, solo con `--profile app`), 8080 (backend).
 
 ## 2. Levantar la infraestructura
 
