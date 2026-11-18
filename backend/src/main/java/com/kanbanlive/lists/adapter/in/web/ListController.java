@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +37,7 @@ class ListController {
 
     @Operation(operationId = "createList", summary = "Crear lista al final del tablero")
     @ApiResponse(responseCode = "201")
+    @PreAuthorize("@perms.canEdit(#boardId)")
     @PostMapping("/api/boards/{boardId}/lists")
     ResponseEntity<ListResponse> create(@PathVariable UUID boardId, @Valid @RequestBody CreateListRequest request) {
         ListSummary summary = createList.execute(new CreateListCommand(boardId, request.name()));
@@ -43,6 +45,7 @@ class ListController {
     }
 
     @Operation(operationId = "renameList", summary = "Renombrar lista (version optimista)")
+    @PreAuthorize("@perms.canEdit(#listId)")
     @PatchMapping("/api/lists/{listId}")
     ListResponse rename(@PathVariable UUID listId, @Valid @RequestBody RenameListRequest request) {
         return ListResponse.from(
@@ -50,6 +53,7 @@ class ListController {
     }
 
     @Operation(operationId = "moveList", summary = "Mover lista entre vecinas (prev/next)")
+    @PreAuthorize("@perms.canEdit(#listId)")
     @PostMapping("/api/lists/{listId}/move")
     ListResponse move(@PathVariable UUID listId, @RequestBody MoveListRequest request) {
         return ListResponse.from(

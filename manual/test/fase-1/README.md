@@ -40,9 +40,27 @@ Si cambiaste `realm.json` con el volumen `keycloak_data` ya creado, Keycloak **n
 ## 3. Arrancar el backend (perfil `local`)
 
 El perfil `local` (`backend/src/main/resources/application-local.yml`) apunta a `localhost:5432` (Postgres
-`kanban/kanban/kanban`), `localhost:6379` (Redis) y habilita OpenAPI/Swagger UI. La validación del JWT usa el
-`jwk-set-uri` de Keycloak (`http://localhost:8180/realms/kanban/protocol/openid-connect/certs`), no hace falta
-configurar nada más. Flyway crea el esquema al arrancar.
+`kanban/kanban/kanban`), `localhost:6379` (Redis) y habilita OpenAPI/Swagger UI. **El perfil `local` desactiva la
+seguridad** (`kanban.security.enabled: false`): todo responde sin token y los `401` de §5 no se reproducen.
+Flyway crea el esquema al arrancar.
+
+Para probar con JWT validado tienes dos opciones:
+
+- Backend en local con seguridad: `./mvnw -B spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--kanban.security.enabled=true`.
+  Valida contra el `jwk-set-uri` de Keycloak (`http://localhost:8180/realms/kanban/protocol/openid-connect/certs`).
+- Backend en contenedor (perfil `docker`, JWT validado por defecto):
+  `docker compose -f infra/docker-compose.yml --profile app up -d --build backend` (el contenedor no publica el 8080: usa
+  `API=http://localhost:8000`, vía nginx). Con `KANBAN_SECURITY_ENABLED=false` en el entorno se abre la API. Keycloak emite siempre
+  `iss=http://localhost:8180/realms/kanban` (`KC_HOSTNAME`) y el backend descarga el JWKS por `keycloak:8180`.
+
+Si `realm.json` cambió (p. ej. clientes o redirect URIs nuevos), reimporta el realm borrando solo el volumen de Keycloak
+(pierdes los cambios hechos en la consola de Keycloak, no los datos de Postgres):
+
+```bash
+docker compose -f infra/docker-compose.yml rm -sf keycloak
+docker volume rm kanban-live_keycloak_data
+docker compose -f infra/docker-compose.yml up -d keycloak
+```
 
 ```bash
 cd backend

@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,6 +43,7 @@ class CardController {
 
     @Operation(operationId = "createCard", summary = "Crear tarjeta al final de la lista")
     @ApiResponse(responseCode = "201")
+    @PreAuthorize("@perms.canEdit(#listId)")
     @PostMapping("/api/lists/{listId}/cards")
     ResponseEntity<CardResponse> create(@PathVariable UUID listId, @Valid @RequestBody CreateCardRequest request) {
         CardSummary summary = createCard
@@ -50,6 +52,7 @@ class CardController {
     }
 
     @Operation(operationId = "updateCard", summary = "Editar tarjeta (version optimista)")
+    @PreAuthorize("@perms.canEdit(#cardId)")
     @PatchMapping("/api/cards/{cardId}")
     CardResponse update(@PathVariable UUID cardId, @Valid @RequestBody UpdateCardRequest request) {
         return CardResponse.from(updateCard.execute(
@@ -57,6 +60,7 @@ class CardController {
     }
 
     @Operation(operationId = "moveCard", summary = "Mover tarjeta: una sola fila actualizada")
+    @PreAuthorize("@perms.canEdit(#cardId) and @perms.canEdit(#request.listId())")
     @PostMapping("/api/cards/{cardId}/move")
     CardResponse move(@PathVariable UUID cardId, @Valid @RequestBody MoveCardRequest request) {
         return CardResponse.from(moveCard.execute(
@@ -65,6 +69,7 @@ class CardController {
 
     @Operation(operationId = "deleteCard", summary = "Borrar tarjeta")
     @ApiResponse(responseCode = "204")
+    @PreAuthorize("@perms.canEdit(#cardId)")
     @DeleteMapping("/api/cards/{cardId}")
     ResponseEntity<Void> delete(@PathVariable UUID cardId) {
         deleteCard.execute(new DeleteCardCommand(cardId));

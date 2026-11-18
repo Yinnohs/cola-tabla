@@ -4,11 +4,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
-/** Fase 0: resource server JWT minimo. La autorizacion por rol/membresia llega en la Fase 2. */
+/** Resource server JWT (issuer Keycloak). La autorizacion por membresia va por @PreAuthorize + bean perms. */
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean

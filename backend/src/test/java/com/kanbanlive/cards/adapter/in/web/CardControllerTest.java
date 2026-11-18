@@ -22,6 +22,7 @@ import com.kanbanlive.cards.application.port.in.MoveCardUseCase;
 import com.kanbanlive.cards.application.port.in.MoveCardUseCase.MoveCardCommand;
 import com.kanbanlive.cards.application.port.in.UpdateCardUseCase;
 import com.kanbanlive.cards.application.port.in.UpdateCardUseCase.UpdateCardCommand;
+import com.kanbanlive.platform.security.Perms;
 import com.kanbanlive.platform.security.SecurityConfig;
 import com.kanbanlive.platform.web.GlobalExceptionHandler;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
@@ -30,6 +31,7 @@ import com.kanbanlive.sharedkernel.domain.ValidationException;
 import com.kanbanlive.sharedkernel.position.RebalanceRequiredException;
 import java.time.Instant;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -45,6 +47,16 @@ class CardControllerTest {
 
     @Autowired
     MockMvc mvc;
+    @MockitoBean(name = "perms")
+    Perms perms;
+
+    @BeforeEach
+    void allowAll() {
+        when(perms.canView(any())).thenReturn(true);
+        when(perms.canEdit(any())).thenReturn(true);
+        when(perms.canAdmin(any())).thenReturn(true);
+    }
+
     @MockitoBean
     JwtDecoder jwtDecoder;
     @MockitoBean
@@ -202,5 +214,14 @@ class CardControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"Fix\"}"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(delete("/api/cards/{id}", id).with(csrf())).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deniedByPermsIs403() throws Exception {
+        when(perms.canEdit(any())).thenReturn(false);
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .delete("/api/cards/{id}", UUID.randomUUID()).with(jwt()).with(csrf()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 }

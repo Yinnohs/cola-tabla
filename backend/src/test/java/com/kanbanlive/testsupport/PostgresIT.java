@@ -14,7 +14,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @ActiveProfiles("test")
 public abstract class PostgresIT {
 
-    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+            // Varios contextos Spring cacheados (cada uno con su pool) comparten el contenedor.
+            .withCommand("postgres", "-c", "max_connections=300");
 
     static {
         POSTGRES.start();

@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.kanbanlive.platform.security.Perms;
 import com.kanbanlive.platform.security.SecurityConfig;
 import com.kanbanlive.platform.web.GlobalExceptionHandler;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
@@ -21,6 +22,7 @@ import com.kanbanlive.workspaces.application.port.in.WorkspaceView;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -36,6 +38,16 @@ class WorkspaceControllerTest {
 
     @Autowired
     MockMvc mvc;
+    @MockitoBean(name = "perms")
+    Perms perms;
+
+    @BeforeEach
+    void allowAll() {
+        when(perms.canView(any())).thenReturn(true);
+        when(perms.canEdit(any())).thenReturn(true);
+        when(perms.canAdmin(any())).thenReturn(true);
+    }
+
     @MockitoBean
     JwtDecoder jwtDecoder;
     @MockitoBean
@@ -115,5 +127,13 @@ class WorkspaceControllerTest {
     @Test
     void getByIdWithoutTokenIs401() throws Exception {
         mvc.perform(get("/api/workspaces/{id}", id)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deniedByPermsIs403() throws Exception {
+        when(perms.canView(any())).thenReturn(false);
+        mvc.perform(get("/api/workspaces/{id}", id).with(jwt()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 }

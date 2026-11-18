@@ -31,15 +31,31 @@ services:
     image: quay.io/keycloak/keycloak:26.0
     command: ["start-dev", "--import-realm"]
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Credenciales admin SOLO para desarrollo local; sobreescribir con KC_ADMIN_USER / KC_ADMIN_PASSWORD.
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8180
       KC_HEALTH_ENABLED: "true"
+      # Hostname v2: el iss de todos los tokens es http://localhost:8180/realms/kanban (aunque se pidan
+      # desde otro host); el backchannel dinámico deja al backend leer el JWKS vía keycloak:8180.
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports:
       - "8180:8180"
     volumes:
       - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
       - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      # La imagen no trae curl: petición HTTP a mano por /dev/tcp al puerto de management (9000).
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200'"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   nginx:
     image: nginx:1.27-alpine
@@ -57,19 +73,27 @@ services:
     build:
       context: ../backend
     environment:
-      SPRING_PROFILES_ACTIVE: local
+      SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/kanban
       SPRING_DATASOURCE_USERNAME: kanban
       SPRING_DATASOURCE_PASSWORD: kanban
       SPRING_DATA_REDIS_HOST: redis
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8180/realms/kanban
+      SPRING_DATA_REDIS_PORT: 6379
+      # Mismos nombres que lee backend/src/main/resources/application.yml.
+      # Issuer: solo se compara con el claim iss (KC_HOSTNAME); con jwk-set-uri no hay discovery.
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/kanban
+      # JWKS por la red interna de Docker.
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/kanban/protocol/openid-connect/certs
+      # JWT validado por defecto; KANBAN_SECURITY_ENABLED=false abre la API (solo desarrollo).
+      KANBAN_SECURITY_ENABLED: ${KANBAN_SECURITY_ENABLED:-true}
     depends_on:
       postgres:
         condition: service_healthy
+      # Redis se usa a partir de Fase 5/6.
       redis:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
   frontend:
     profiles: ["app"]

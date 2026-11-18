@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +42,7 @@ class BoardController {
 
     @Operation(operationId = "createBoard", summary = "Crear tablero en un workspace")
     @ApiResponse(responseCode = "201")
+    @PreAuthorize("@perms.canEdit(#workspaceId)")
     @PostMapping("/api/workspaces/{workspaceId}/boards")
     ResponseEntity<BoardResponse> create(@PathVariable UUID workspaceId,
             @Valid @RequestBody CreateBoardRequest request) {
@@ -49,18 +51,21 @@ class BoardController {
     }
 
     @Operation(operationId = "listBoards", summary = "Listar tableros de un workspace")
+    @PreAuthorize("@perms.canView(#workspaceId)")
     @GetMapping("/api/workspaces/{workspaceId}/boards")
     List<BoardResponse> list(@PathVariable UUID workspaceId) {
         return listBoards.execute(workspaceId).stream().map(BoardResponse::from).toList();
     }
 
     @Operation(operationId = "getBoard", summary = "Tablero con listas y tarjetas ordenadas")
+    @PreAuthorize("@perms.canView(#boardId)")
     @GetMapping("/api/boards/{boardId}")
     BoardDetailsResponse get(@PathVariable UUID boardId) {
         return BoardDetailsResponse.from(getBoard.execute(boardId));
     }
 
     @Operation(operationId = "renameBoard", summary = "Renombrar tablero (version optimista)")
+    @PreAuthorize("@perms.canEdit(#boardId)")
     @PatchMapping("/api/boards/{boardId}")
     BoardResponse rename(@PathVariable UUID boardId, @Valid @RequestBody RenameBoardRequest request) {
         return BoardResponse.from(

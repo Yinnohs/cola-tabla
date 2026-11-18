@@ -50,8 +50,21 @@ class WorkspaceServicesTest {
 
     final InMemoryWorkspaceRepository repo = new InMemoryWorkspaceRepository();
     final FixedClock clock = new FixedClock(Instant.parse("2026-01-01T00:00:00Z"));
-    final CreateWorkspaceService create = new CreateWorkspaceService(repo, new SequentialIdGenerator(), clock);
-    final ListWorkspacesService list = new ListWorkspacesService(repo);
+    final List<String> owners = new ArrayList<>();
+    final CreateWorkspaceService create = new CreateWorkspaceService(repo, new SequentialIdGenerator(), clock,
+            () -> "user-1", (workspaceId, userId) -> owners.add(workspaceId + ":" + userId));
+    final ListWorkspacesService list = new ListWorkspacesService(repo, () -> "user-1", userId -> java.util.Set.of());
+    final ListWorkspacesService listAll = new ListWorkspacesService(repo, new com.kanbanlive.sharedkernel.application.CurrentUser() {
+        @Override
+        public String id() {
+            return "dev";
+        }
+
+        @Override
+        public boolean unrestricted() {
+            return true;
+        }
+    }, userId -> java.util.Set.of());
     final CheckWorkspaceExistsService exists = new CheckWorkspaceExistsService(repo);
 
     @Test
@@ -64,17 +77,25 @@ class WorkspaceServicesTest {
     }
 
     @Test
+    void creatorBecomesOwner() {
+        WorkspaceView view = create.execute(new CreateWorkspaceCommand("Acme"));
+        assertThat(owners).containsExactly(view.id() + ":user-1");
+    }
+
+    @Test
     void createRejectsInvalidName() {
         assertThatThrownBy(() -> create.execute(new CreateWorkspaceCommand(" ")))
                 .isInstanceOf(ValidationException.class);
         assertThat(repo.store).isEmpty();
+        assertThat(owners).isEmpty();
     }
 
     @Test
     void listReturnsAll() {
         create.execute(new CreateWorkspaceCommand("A"));
         create.execute(new CreateWorkspaceCommand("B"));
-        assertThat(list.execute()).extracting(WorkspaceView::name).containsExactly("A", "B");
+        assertThat(listAll.execute()).extracting(WorkspaceView::name).containsExactly("A", "B");
+        assertThat(list.execute()).isEmpty();
     }
 
     @Test

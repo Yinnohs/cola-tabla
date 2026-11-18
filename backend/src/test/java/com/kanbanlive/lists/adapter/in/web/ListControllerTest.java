@@ -18,6 +18,7 @@ import com.kanbanlive.lists.application.port.in.MoveListUseCase;
 import com.kanbanlive.lists.application.port.in.MoveListUseCase.MoveListCommand;
 import com.kanbanlive.lists.application.port.in.RenameListUseCase;
 import com.kanbanlive.lists.application.port.in.RenameListUseCase.RenameListCommand;
+import com.kanbanlive.platform.security.Perms;
 import com.kanbanlive.platform.security.SecurityConfig;
 import com.kanbanlive.platform.web.GlobalExceptionHandler;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
@@ -26,6 +27,7 @@ import com.kanbanlive.sharedkernel.domain.ValidationException;
 import com.kanbanlive.sharedkernel.position.RebalanceRequiredException;
 import java.time.Instant;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -41,6 +43,16 @@ class ListControllerTest {
 
     @Autowired
     MockMvc mvc;
+    @MockitoBean(name = "perms")
+    Perms perms;
+
+    @BeforeEach
+    void allowAll() {
+        when(perms.canView(any())).thenReturn(true);
+        when(perms.canEdit(any())).thenReturn(true);
+        when(perms.canAdmin(any())).thenReturn(true);
+    }
+
     @MockitoBean
     JwtDecoder jwtDecoder;
     @MockitoBean
@@ -186,5 +198,15 @@ class ListControllerTest {
         mvc.perform(post("/api/lists/{id}/move", id).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deniedByPermsIs403() throws Exception {
+        when(perms.canEdit(any())).thenReturn(false);
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/lists/{id}", UUID.randomUUID()).with(jwt()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"x\",\"version\":0}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 }

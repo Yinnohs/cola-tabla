@@ -43,7 +43,25 @@ cd backend
 ./mvnw verify          # compila y ejecuta tests (unitarios + IT con Testcontainers; requiere Docker)
 ```
 
-OpenAPI/Swagger UI (perfil `local`): http://localhost:8080/swagger-ui.html · spec en http://localhost:8080/v3/api-docs. Token para probar: ver [`manual/test/fase-1/README.md`](manual/test/fase-1/README.md) (cliente de desarrollo `kanban-dev-cli`).
+OpenAPI/Swagger UI (perfiles `local` y `docker`): http://localhost:8080/swagger-ui.html · spec en http://localhost:8080/v3/api-docs.
+
+Seguridad por perfil:
+
+- `local` (`mvnw spring-boot:run`): **sin seguridad** (`kanban.security.enabled: false`), todo responde sin token.
+- `docker` (backend en contenedor, `--profile app`): **JWT validado** contra Keycloak; `KANBAN_SECURITY_ENABLED=false` la desactiva.
+
+Token para probar (cliente de desarrollo `kanban-dev-cli`, usuarios `owner`/`editor`/`viewer`):
+
+```
+TOKEN=$(curl -s -X POST http://localhost:8180/realms/kanban/protocol/openid-connect/token \
+  -d grant_type=password -d client_id=kanban-dev-cli -d username=owner -d password=owner \
+  | sed -E 's/.*"access_token":"([^"]+)".*/\1/')
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/workspaces
+```
+
+Si cambia `infra/keycloak/realm.json`, Keycloak no lo reimporta mientras exista su volumen:
+`docker compose -f infra/docker-compose.yml rm -sf keycloak && docker volume rm kanban-live_keycloak_data && docker compose -f infra/docker-compose.yml up -d keycloak`.
+Más detalle en [`manual/test/fase-1/README.md`](manual/test/fase-1/README.md).
 
 ### Frontend
 

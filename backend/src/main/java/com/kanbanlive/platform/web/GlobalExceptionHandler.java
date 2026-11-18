@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -70,6 +71,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .toList();
         pd.setProperty(ERRORS, errors);
         return pd;
+    }
+
+    /** @PreAuthorize denegado (bean perms): 403 uniforme, sin distinguir recurso inexistente de ajeno. */
+    @ExceptionHandler(AccessDeniedException.class)
+    ProblemDetail accessDenied(AccessDeniedException ex) {
+        return base(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied");
     }
 
     @ExceptionHandler(Exception.class)

@@ -22,6 +22,7 @@ import com.kanbanlive.boards.application.port.in.GetBoardUseCase;
 import com.kanbanlive.boards.application.port.in.ListBoardsUseCase;
 import com.kanbanlive.boards.application.port.in.RenameBoardUseCase;
 import com.kanbanlive.boards.application.port.in.RenameBoardUseCase.RenameBoardCommand;
+import com.kanbanlive.platform.security.Perms;
 import com.kanbanlive.platform.security.SecurityConfig;
 import com.kanbanlive.platform.web.GlobalExceptionHandler;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
@@ -29,6 +30,7 @@ import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -44,6 +46,16 @@ class BoardControllerTest {
 
     @Autowired
     MockMvc mvc;
+    @MockitoBean(name = "perms")
+    Perms perms;
+
+    @BeforeEach
+    void allowAll() {
+        when(perms.canView(any())).thenReturn(true);
+        when(perms.canEdit(any())).thenReturn(true);
+        when(perms.canAdmin(any())).thenReturn(true);
+    }
+
     @MockitoBean
     JwtDecoder jwtDecoder;
     @MockitoBean
@@ -157,5 +169,14 @@ class BoardControllerTest {
     @Test
     void listWithoutTokenIs401() throws Exception {
         mvc.perform(get("/api/workspaces/{ws}/boards", ws)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deniedByPermsIs403() throws Exception {
+        when(perms.canView(any())).thenReturn(false);
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/boards/{id}", UUID.randomUUID()).with(jwt()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 }

@@ -22,6 +22,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invitar a un usuario al workspace (solo OWNER) */
+        post: operations["inviteMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces/{workspaceId}/boards": {
         parameters: {
             query?: never;
@@ -106,6 +123,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Cambiar el rol de un miembro (solo OWNER) */
+        patch: operations["changeMemberRole"];
         trace?: never;
     };
     "/api/lists/{listId}": {
@@ -194,6 +228,20 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        InviteMemberRequest: {
+            userId: string;
+            role: string;
+        };
+        MemberResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            workspaceId?: string;
+            userId?: string;
+            role?: string;
+            /** Format: int64 */
+            version?: number;
+        };
         CreateBoardRequest: {
             name: string;
         };
@@ -253,6 +301,9 @@ export interface components {
         };
         CreateListRequest: {
             name: string;
+        };
+        ChangeRoleRequest: {
+            role: string;
         };
         RenameListRequest: {
             name: string;
@@ -347,6 +398,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+        };
+    };
+    inviteMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
                 };
             };
         };
@@ -499,6 +576,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ListResponse"];
+                };
+            };
+        };
+    };
+    changeMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
                 };
             };
         };

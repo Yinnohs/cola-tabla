@@ -58,6 +58,44 @@
         }
       }
     },
+    "/api/workspaces/{workspaceId}/members" : {
+      "post" : {
+        "tags" : [ "Membership" ],
+        "summary" : "Invitar a un usuario al workspace (solo OWNER)",
+        "operationId" : "inviteMember",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/InviteMemberRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MemberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{workspaceId}/boards" : {
       "get" : {
         "tags" : [ "Boards" ],
@@ -270,6 +308,51 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/members/{userId}" : {
+      "patch" : {
+        "tags" : [ "Membership" ],
+        "summary" : "Cambiar el rol de un miembro (solo OWNER)",
+        "operationId" : "changeMemberRole",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeRoleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MemberResponse"
                 }
               }
             }
@@ -498,6 +581,43 @@
           }
         }
       },
+      "InviteMemberRequest" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "role" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "role", "userId" ]
+      },
+      "MemberResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "workspaceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "userId" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "CreateBoardRequest" : {
         "type" : "object",
         "properties" : {
@@ -647,6 +767,16 @@
           }
         },
         "required" : [ "name" ]
+      },
+      "ChangeRoleRequest" : {
+        "type" : "object",
+        "properties" : {
+          "role" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "role" ]
       },
       "RenameListRequest" : {
         "type" : "object",

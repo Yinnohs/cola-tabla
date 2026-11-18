@@ -1,0 +1,12 @@
+# Perfil docker: backend dentro de infra/docker-compose.yml (perfil `app`).
+# Datasource, Redis y URIs de Keycloak llegan por variables de entorno desde el compose.
+kanban:
+  security:
+    # JWT validado por defecto; KANBAN_SECURITY_ENABLED=false abre la API (solo desarrollo).
+    enabled: ${KANBAN_SECURITY_ENABLED:true}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
