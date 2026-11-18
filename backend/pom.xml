@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.5</version>
+    <version>3.5.16</version>
     <relativePath/>
   </parent>
 
@@ -20,6 +20,8 @@
     <java.version>21</java.version>
     <archunit.version>1.4.1</archunit.version>
     <jqwik.version>1.9.3</jqwik.version>
+    <!-- 1.21.3 no es compatible con Docker Engine 29 (API minima 1.44) -->
+    <testcontainers.version>1.21.4</testcontainers.version>
   </properties>
 
   <dependencies>
