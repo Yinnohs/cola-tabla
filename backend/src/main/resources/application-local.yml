@@ -9,6 +9,11 @@ spring:
       host: localhost
       port: 6379
 
+# El frontend aun no envia JWT (Keycloak llega en la Fase 2): sin esto todo responde 401.
+kanban:
+  security:
+    enabled: false
+
 springdoc:
   api-docs:
     enabled: true
