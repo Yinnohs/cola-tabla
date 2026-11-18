@@ -19,6 +19,8 @@ export function BoardView({ boardId, board }: BoardViewProps) {
   const [openCardId, setOpenCardId] = useState<CardId | null>(null)
   const closeDialog = useCallback(() => setOpenCardId(null), [])
   const openCard = openCardId ? board.cards[openCardId] : undefined
+  // La tarjeta desaparecio (borrada por otra persona): se descarta el id durante el render, sin efecto.
+  if (openCardId && !openCard) setOpenCardId(null)
 
   return (
     <>
@@ -61,7 +63,7 @@ export function BoardView({ boardId, board }: BoardViewProps) {
           <CreateListForm boardId={boardId} />
         </div>
       </BoardDnd>
-      {openCardId && <CardDialog boardId={boardId} card={openCard} onClose={closeDialog} />}
+      {openCard && <CardDialog boardId={boardId} card={openCard} onClose={closeDialog} />}
     </>
   )
 }

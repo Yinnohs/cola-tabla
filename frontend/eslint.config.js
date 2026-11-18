@@ -27,6 +27,25 @@ export default tseslint.config(
     },
   },
   {
+    // Decision tecnica (docs/adr/0004-sin-use-effect.md): sin efectos en la aplicacion
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['useEffect', 'useLayoutEffect', 'useInsertionEffect'],
+              message:
+                'No se permite useEffect: deriva estado en el render, usa event handlers, ref callbacks o TanStack Query.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // fetch/WebSocket solo en el wrapper unico y en tests
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/shared/lib/http-client.ts', 'src/**/*.test.{ts,tsx}'],

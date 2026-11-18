@@ -3,7 +3,12 @@ name: frontend-hexagonal-features
 description: Guía para trabajar en frontend/ (React + TS + Vite) de Kanban Live con arquitectura hexagonal y core dividido por funcionalidades (features). Úsala al crear o modificar features, puertos, adapters, casos de uso (hooks), reducers de eventos en tiempo real, dnd-kit o tests/reglas de import.
 ---
 
+
+
 # Frontend: Hexagonal por features
+
+## IMPORTANTE
+NUNCA USES "useEffect" en codigo de REACT
 
 Lee primero `kanban-project-context`.
 

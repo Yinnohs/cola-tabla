@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useCallback, useId, useState, type FormEvent } from 'react'
 import type { BoardId } from '../../../shared/kernel'
 import type { Card } from '../domain/card'
 import { CardConflictError } from '../application/errors'
@@ -7,8 +7,8 @@ import { useUpdateCard } from '../application/use-update-card'
 
 interface CardDialogProps {
   boardId: BoardId
-  /** Tarjeta vigente en la cache; `undefined` si desaparecio (se cierra el dialogo). */
-  card: Card | undefined
+  /** Tarjeta vigente en la cache (el padre solo monta el dialogo mientras exista). */
+  card: Card
   onClose: () => void
 }
 
@@ -17,32 +17,28 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
   const titleId = useId()
   const update = useUpdateCard(boardId)
   const remove = useDeleteCard(boardId)
-  const [title, setTitle] = useState(card?.title ?? '')
-  const [description, setDescription] = useState(card?.description ?? '')
+  const [title, setTitle] = useState(card.title)
+  const [description, setDescription] = useState(card.description)
   // Version con la que se cargo el formulario: es la que se envia al guardar.
-  const [loadedVersion, setLoadedVersion] = useState(card?.version ?? 0)
+  const [loadedVersion, setLoadedVersion] = useState(card.version)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   // Elemento que tenia el foco al abrir (antes de que `autoFocus` lo mueva) para devolverselo al cerrar.
   const [opener] = useState<Element | null>(() => document.activeElement)
 
-  useEffect(() => {
-    return () => {
+  // Ref callback con cleanup (React 19): al desmontar el dialogo devuelve el foco. Debe ser estable.
+  const restoreFocusOnUnmount = useCallback(
+    () => () => {
       if (opener instanceof HTMLElement) opener.focus()
-    }
-  }, [opener])
-
-  useEffect(() => {
-    if (!card) onClose()
-  }, [card, onClose])
-
-  if (!card) return null
+    },
+    [opener],
+  )
 
   const conflict = update.error instanceof CardConflictError
   const otherError = update.isError && !conflict
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    if (!card || conflict) return
+    if (conflict) return
     update.mutate(
       { cardId: card.id, title, description, expectedVersion: loadedVersion },
       { onSuccess: onClose },
@@ -51,7 +47,6 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
 
   /** Descarta lo escrito y carga los datos vigentes (el tablero ya se refresco al detectar el conflicto). */
   function reload() {
-    if (!card) return
     setTitle(card.title)
     setDescription(card.description)
     setLoadedVersion(card.version)
@@ -59,13 +54,13 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
   }
 
   function onDelete() {
-    if (!card) return
     remove.mutate(card.id, { onSuccess: onClose })
   }
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
       <div
+        ref={restoreFocusOnUnmount}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
