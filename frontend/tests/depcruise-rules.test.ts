@@ -98,6 +98,46 @@ const violations: Array<[string, string, Files]> = [
       'src/features/cards/index.ts': `export const c = 1\n`,
     },
   ],
+  [
+    'dnd-kit-only-in-ui',
+    'application importa dnd-kit',
+    {
+      'src/features/cards/application/uc.ts': `import { DndContext } from '@dnd-kit/core'
+export const u = DndContext
+`,
+    },
+  ],
+  [
+    'dnd-kit-only-in-ui',
+    'shared importa dnd-kit',
+    {
+      'src/shared/ui/x.ts': `import { DndContext } from '@dnd-kit/core'
+export const x = DndContext
+`,
+    },
+  ],
+  [
+    'api-client-only-infrastructure',
+    'application importa el cliente generado',
+    {
+      'src/features/cards/application/uc.ts': `import { a } from '../../../shared/lib/api'
+export const u = a
+`,
+      'src/shared/lib/api/index.ts': `export const a = 1
+`,
+    },
+  ],
+  [
+    'api-client-only-infrastructure',
+    'ui importa el cliente generado',
+    {
+      'src/features/cards/ui/v.ts': `import { a } from '../../../shared/lib/api'
+export const v = a
+`,
+      'src/shared/lib/api/index.ts': `export const a = 1
+`,
+    },
+  ],
 ]
 
 describe('reglas de arquitectura (dependency-cruiser)', () => {
@@ -110,6 +150,16 @@ describe('reglas de arquitectura (dependency-cruiser)', () => {
     },
     30_000,
   )
+
+  it('pasa: dnd-kit importado desde features/<x>/ui/dnd', () => {
+    const { status, out } = cruise('ok-dnd', {
+      'src/features/cards/ui/dnd/b.ts': `import { DndContext } from '@dnd-kit/core'
+export const b = DndContext
+`,
+    })
+    expect(out).not.toMatch(/error/i)
+    expect(status).toBe(0)
+  }, 30_000)
 
   it('pasa: feature->feature via index.ts, application->domain, ui->application', () => {
     const { status, out } = cruise('ok', {

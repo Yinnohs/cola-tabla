@@ -49,6 +49,11 @@ class BoardServicesTest {
         public boolean existsById(UUID id) {
             return store.containsKey(id);
         }
+
+        @Override
+        public List<Board> findByWorkspaceId(UUID workspaceId) {
+            return store.values().stream().filter(b -> b.workspaceId().equals(workspaceId)).toList();
+        }
     }
 
     final InMemoryBoardRepository repo = new InMemoryBoardRepository();
@@ -123,5 +128,25 @@ class BoardServicesTest {
         GetBoardService get = new GetBoardService(boardId -> boardId.equals(id) ? Optional.of(details) : Optional.empty());
         assertThat(get.execute(id)).isSameAs(details);
         assertThatThrownBy(() -> get.execute(UUID.randomUUID())).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void listBoardsReturnsOnlyBoardsOfWorkspace() {
+        UUID other = UUID.randomUUID();
+        knownWorkspaces.add(other);
+        create.execute(new CreateBoardCommand(ws, "A"));
+        create.execute(new CreateBoardCommand(other, "Other"));
+        create.execute(new CreateBoardCommand(ws, "B"));
+        ListBoardsService list = new ListBoardsService(repo, directory);
+
+        assertThat(list.execute(ws)).extracting(BoardSummary::name).containsExactlyInAnyOrder("A", "B");
+        assertThat(list.execute(ws)).allMatch(b -> b.workspaceId().equals(ws));
+    }
+
+    @Test
+    void listBoardsOfEmptyWorkspaceIsEmptyAndOfMissingWorkspaceIsNotFound() {
+        ListBoardsService list = new ListBoardsService(repo, directory);
+        assertThat(list.execute(ws)).isEmpty();
+        assertThatThrownBy(() -> list.execute(UUID.randomUUID())).isInstanceOf(NotFoundException.class);
     }
 }

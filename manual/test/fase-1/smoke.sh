@@ -79,6 +79,10 @@ assert_contains "el workspace aparece en la lista" "$WS"
 
 call POST "/api/workspaces/$WS/boards" '{"name":"Smoke Board"}'; expect "crear board" 201
 BOARD=$(printf '%s' "$BODY" | jid id)
+call GET "/api/workspaces/$WS"; expect "GET workspace" 200
+assert_contains "workspace con su nombre" '"name":"Smoke WS"'
+call GET "/api/workspaces/$WS/boards"; expect "listar boards del workspace" 200
+assert_contains "el board aparece en el workspace" "$BOARD"
 
 call POST "/api/boards/$BOARD/lists" '{"name":"Todo"}'; expect "crear lista Todo" 201
 TODO=$(printf '%s' "$BODY" | jid id)
@@ -128,6 +132,8 @@ NIL=00000000-0000-0000-0000-000000000000
 call GET "/api/boards/$NIL"; expect "GET board inexistente -> 404" 404
 assert_contains "code NOT_FOUND" '"code":"NOT_FOUND"'
 call POST "/api/lists/$NIL/cards" '{"title":"x"}'; expect "crear tarjeta en lista inexistente -> 404" 404
+call GET "/api/workspaces/$NIL"; expect "GET workspace inexistente -> 404" 404
+call GET "/api/workspaces/$NIL/boards"; expect "listar boards de workspace inexistente -> 404" 404
 call POST /api/workspaces '{"name":""}'; expect "workspace con nombre vacio -> 422" 422
 assert_contains "code VALIDATION" '"code":"VALIDATION"'
 call PATCH "/api/cards/$C2" '{"title":"sin version"}'; expect "editar sin version -> 422" 422

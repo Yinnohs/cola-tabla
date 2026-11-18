@@ -1,2 +1,5 @@
 export * from './result'
 export * from './ids'
+export * from './fractional-index'
+export * from './name'
+export * from './ordering'

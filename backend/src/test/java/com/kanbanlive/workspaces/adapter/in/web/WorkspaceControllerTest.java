@@ -12,8 +12,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.kanbanlive.platform.security.SecurityConfig;
 import com.kanbanlive.platform.web.GlobalExceptionHandler;
+import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.ValidationException;
 import com.kanbanlive.workspaces.application.port.in.CreateWorkspaceUseCase;
+import com.kanbanlive.workspaces.application.port.in.GetWorkspaceUseCase;
 import com.kanbanlive.workspaces.application.port.in.ListWorkspacesUseCase;
 import com.kanbanlive.workspaces.application.port.in.WorkspaceView;
 import java.time.Instant;
@@ -40,6 +42,8 @@ class WorkspaceControllerTest {
     CreateWorkspaceUseCase createWorkspace;
     @MockitoBean
     ListWorkspacesUseCase listWorkspaces;
+    @MockitoBean
+    GetWorkspaceUseCase getWorkspace;
 
     final UUID id = UUID.randomUUID();
     final WorkspaceView view = new WorkspaceView(id, "Acme", 0, Instant.parse("2026-01-01T00:00:00Z"));
@@ -87,5 +91,29 @@ class WorkspaceControllerTest {
     @Test
     void withoutTokenIs401() throws Exception {
         mvc.perform(get("/api/workspaces")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getByIdReturnsWorkspace() throws Exception {
+        when(getWorkspace.execute(id)).thenReturn(view);
+
+        mvc.perform(get("/api/workspaces/{id}", id).with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.name").value("Acme"));
+    }
+
+    @Test
+    void getByIdMissingIs404() throws Exception {
+        when(getWorkspace.execute(id)).thenThrow(new NotFoundException("workspace not found"));
+
+        mvc.perform(get("/api/workspaces/{id}", id).with(jwt()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    void getByIdWithoutTokenIs401() throws Exception {
+        mvc.perform(get("/api/workspaces/{id}", id)).andExpect(status().isUnauthorized());
     }
 }

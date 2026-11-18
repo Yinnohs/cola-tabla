@@ -3,6 +3,7 @@ package com.kanbanlive.workspaces.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.ValidationException;
 import com.kanbanlive.testsupport.FixedClock;
 import com.kanbanlive.testsupport.SequentialIdGenerator;
@@ -81,5 +82,13 @@ class WorkspaceServicesTest {
         WorkspaceView view = create.execute(new CreateWorkspaceCommand("A"));
         assertThat(exists.execute(view.id())).isTrue();
         assertThat(exists.execute(UUID.randomUUID())).isFalse();
+    }
+
+    @Test
+    void getReturnsViewOrNotFound() {
+        WorkspaceView view = create.execute(new CreateWorkspaceCommand("Acme"));
+        GetWorkspaceService get = new GetWorkspaceService(repo);
+        assertThat(get.execute(view.id())).isEqualTo(view);
+        assertThatThrownBy(() -> get.execute(UUID.randomUUID())).isInstanceOf(NotFoundException.class);
     }
 }

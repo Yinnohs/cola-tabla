@@ -109,6 +109,13 @@ echo "$WS $BOARD $TODO $DOING $C1 $C2 $C3"
 Esperado: cada `POST` devuelve `201` con cabecera `Location`. Para ver el código HTTP añade `-i` o
 `-o /dev/null -w '%{http_code}\n'`. `GET $API/api/workspaces` lista el workspace creado.
 
+Endpoints de lectura del workspace (necesarios para que la UI muestre sus tableros):
+
+```bash
+curl -s $API/api/workspaces/$WS -H "$AUTH"          # 200: {id,name,version,createdAt}; 404 si no existe
+curl -s $API/api/workspaces/$WS/boards -H "$AUTH"   # 200: [{id,workspaceId,name,version,createdAt}] por created_at, id; 404 si el workspace no existe
+```
+
 ### Escenario 2 — `GET /api/boards/{id}`: orden de listas y tarjetas
 
 ```bash

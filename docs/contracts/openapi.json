@@ -59,6 +59,35 @@
       }
     },
     "/api/workspaces/{workspaceId}/boards" : {
+      "get" : {
+        "tags" : [ "Boards" ],
+        "summary" : "Listar tableros de un workspace",
+        "operationId" : "listBoards",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BoardResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "post" : {
         "tags" : [ "Boards" ],
         "summary" : "Crear tablero en un workspace",
@@ -400,6 +429,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BoardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}" : {
+      "get" : {
+        "tags" : [ "Workspaces" ],
+        "summary" : "Obtener un workspace",
+        "operationId" : "getWorkspace",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkspaceResponse"
                 }
               }
             }

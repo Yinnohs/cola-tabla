@@ -82,6 +82,25 @@ module.exports = {
       to: { path: '^src/app/', pathNot: '^src/app/di/' },
     },
     {
+      name: 'dnd-kit-only-in-ui',
+      comment:
+        'dnd-kit solo se importa desde la capa ui de una feature (la integracion vive en features/cards/ui/dnd).',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/features/[^/]+/ui/' },
+      to: { path: ['node_modules/@dnd-kit(/|$)'] },
+    },
+    {
+      name: 'api-client-only-infrastructure',
+      comment:
+        'El cliente generado shared/lib/api solo lo importan infrastructure (y el composition root app/di).',
+      severity: 'error',
+      from: {
+        path: '^src/',
+        pathNot: ['^src/features/[^/]+/infrastructure/', '^src/shared/lib/api/', '^src/app/di/'],
+      },
+      to: { path: '^src/shared/lib/api/' },
+    },
+    {
       name: 'no-test-helpers-in-prod',
       comment: 'Codigo de produccion no importa shared/testing.',
       severity: 'error',

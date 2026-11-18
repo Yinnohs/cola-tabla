@@ -6,7 +6,15 @@ import tseslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', '.tmp-depcruise', '.dependency-cruiser.cjs'] },
+  {
+    ignores: [
+      'dist',
+      'coverage',
+      'src/shared/lib/api/schema.d.ts',
+      '.tmp-depcruise',
+      '.dependency-cruiser.cjs',
+    ],
+  },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended, prettier],

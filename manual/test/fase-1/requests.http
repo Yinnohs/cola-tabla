@@ -31,6 +31,10 @@ Content-Type: application/json
 GET {{api}}/api/workspaces
 Authorization: Bearer {{jwt}}
 
+### 1. obtener workspace por id (404 si no existe)
+GET {{api}}/api/workspaces/{{workspaceId}}
+Authorization: Bearer {{jwt}}
+
 ### 1. crear board
 # @name board
 POST {{api}}/api/workspaces/{{workspaceId}}/boards
@@ -41,6 +45,10 @@ Content-Type: application/json
 
 ###
 @boardId = {{board.response.body.id}}
+
+### 1. listar tableros del workspace (404 si el workspace no existe)
+GET {{api}}/api/workspaces/{{workspaceId}}/boards
+Authorization: Bearer {{jwt}}
 
 ### 1. crear lista Todo
 # @name todo

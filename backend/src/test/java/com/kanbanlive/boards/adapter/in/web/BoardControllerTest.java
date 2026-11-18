@@ -19,6 +19,7 @@ import com.kanbanlive.boards.application.port.in.BoardSummary;
 import com.kanbanlive.boards.application.port.in.CreateBoardUseCase;
 import com.kanbanlive.boards.application.port.in.CreateBoardUseCase.CreateBoardCommand;
 import com.kanbanlive.boards.application.port.in.GetBoardUseCase;
+import com.kanbanlive.boards.application.port.in.ListBoardsUseCase;
 import com.kanbanlive.boards.application.port.in.RenameBoardUseCase;
 import com.kanbanlive.boards.application.port.in.RenameBoardUseCase.RenameBoardCommand;
 import com.kanbanlive.platform.security.SecurityConfig;
@@ -51,6 +52,8 @@ class BoardControllerTest {
     GetBoardUseCase getBoard;
     @MockitoBean
     RenameBoardUseCase renameBoard;
+    @MockitoBean
+    ListBoardsUseCase listBoards;
 
     final UUID ws = UUID.randomUUID();
     final UUID id = UUID.randomUUID();
@@ -131,5 +134,28 @@ class BoardControllerTest {
     @Test
     void withoutTokenIs401() throws Exception {
         mvc.perform(get("/api/boards/{id}", id)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void listReturnsBoardsOfWorkspace() throws Exception {
+        when(listBoards.execute(ws)).thenReturn(List.of(summary));
+
+        mvc.perform(get("/api/workspaces/{ws}/boards", ws).with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(id.toString()))
+                .andExpect(jsonPath("$[0].workspaceId").value(ws.toString()))
+                .andExpect(jsonPath("$[0].name").value("Sprint"));
+    }
+
+    @Test
+    void listOfMissingWorkspaceIs404() throws Exception {
+        when(listBoards.execute(ws)).thenThrow(new NotFoundException("workspace not found"));
+
+        mvc.perform(get("/api/workspaces/{ws}/boards", ws).with(jwt())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listWithoutTokenIs401() throws Exception {
+        mvc.perform(get("/api/workspaces/{ws}/boards", ws)).andExpect(status().isUnauthorized());
     }
 }

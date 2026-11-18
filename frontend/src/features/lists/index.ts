@@ -1,2 +1,10 @@
 // API publica de la feature lists (unico punto de import desde fuera)
-export {}
+export type { List } from './domain/list'
+export { planListMove } from './domain/list-ordering'
+export type { ListRepository, ListNeighbours } from './application/ports/list-repository'
+export { InvalidListNameError } from './application/errors'
+export { useCreateList } from './application/use-create-list'
+export { useRenameList } from './application/use-rename-list'
+export { useMoveList } from './application/use-move-list'
+export { ListView } from './ui/ListView'
+export { CreateListForm } from './ui/CreateListForm'
