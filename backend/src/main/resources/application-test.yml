@@ -1,0 +1,10 @@
+# Perfil test: el datasource lo inyecta Testcontainers (@ServiceConnection).
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+management:
+  health:
+    redis:
+      enabled: false

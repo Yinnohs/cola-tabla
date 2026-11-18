@@ -1,0 +1,10 @@
+# Perfil local: apunta a los servicios de infra/docker-compose.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kanban
+    username: kanban
+    password: kanban
+  data:
+    redis:
+      host: localhost
+      port: 6379

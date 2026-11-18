@@ -1,0 +1,35 @@
+# Java / Gradle / Maven
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.log
+.gradle/
+build/
+out/
+target/
+hs_err_pid*
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+npm-debug.log*
+playwright-report/
+test-results/
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem

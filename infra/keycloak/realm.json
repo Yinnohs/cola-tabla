@@ -1,0 +1,78 @@
+{
+  "realm": "kanban",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      { "name": "owner", "description": "Propietario de workspace (dev)" },
+      { "name": "editor", "description": "Editor (dev)" },
+      { "name": "viewer", "description": "Solo lectura (dev)" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "kanban-web",
+      "name": "Kanban Web (SPA)",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:5173",
+      "baseUrl": "/",
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      }
+    },
+    {
+      "clientId": "kanban-api",
+      "name": "Kanban API (resource server)",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "owner",
+      "email": "owner@kanban.local",
+      "firstName": "Olivia",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "owner", "temporary": false }],
+      "realmRoles": ["owner"]
+    },
+    {
+      "username": "editor",
+      "email": "editor@kanban.local",
+      "firstName": "Edgar",
+      "lastName": "Editor",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "editor", "temporary": false }],
+      "realmRoles": ["editor"]
+    },
+    {
+      "username": "viewer",
+      "email": "viewer@kanban.local",
+      "firstName": "Vera",
+      "lastName": "Viewer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "viewer", "temporary": false }],
+      "realmRoles": ["viewer"]
+    }
+  ]
+}
