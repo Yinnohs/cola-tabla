@@ -4,7 +4,7 @@
   "sslRequired": "none",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
-  "accessTokenLifespan": 300,
+  "accessTokenLifespan": 3600,
   "roles": {
     "realm": [
       { "name": "owner", "description": "Propietario de workspace (dev)" },
@@ -31,6 +31,17 @@
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*"
       }
+    },
+    {
+      "clientId": "kanban-dev-cli",
+      "name": "Kanban Dev CLI (SOLO desarrollo local: password grant para curl/tests manuales)",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false
     },
     {
       "clientId": "kanban-api",

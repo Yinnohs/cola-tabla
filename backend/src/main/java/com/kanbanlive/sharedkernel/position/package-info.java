@@ -1,2 +1,2 @@
-/** Preparado para FractionalIndex (value object + between(prev, next)). Se implementa en la Fase 1. */
+/** FractionalIndex: posiciones ordenables (value object, between, rebalanceo). Ver ADR-0003. */
 package com.kanbanlive.sharedkernel.position;

@@ -8,12 +8,14 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /** Fase 0: resource server JWT minimo. La autorizacion por rol/membresia llega en la Fase 2. */
 @Configuration
-class SecurityConfig {
+public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+                        // Documentacion OpenAPI: solo existe si springdoc esta habilitado (perfiles local/test).
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
                 .csrf(csrf -> csrf.disable());

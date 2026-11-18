@@ -39,9 +39,11 @@ Para levantar también backend y frontend en contenedores: `docker compose -f in
 
 ```
 cd backend
-./gradlew bootRun --args='--spring.profiles.active=local'
-./gradlew build        # compila y ejecuta tests
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw verify          # compila y ejecuta tests (unitarios + IT con Testcontainers; requiere Docker)
 ```
+
+OpenAPI/Swagger UI (perfil `local`): http://localhost:8080/swagger-ui.html · spec en http://localhost:8080/v3/api-docs. Token para probar: ver [`manual/test/fase-1/README.md`](manual/test/fase-1/README.md) (cliente de desarrollo `kanban-dev-cli`).
 
 ### Frontend
 
@@ -58,3 +60,4 @@ npm run lint && npm run typecheck && npm test
 - Tareas: [`todos/`](todos/README.md) ([back](todos/back/), [front](todos/front/))
 - Decisiones: [`docs/adr/`](docs/adr/README.md)
 - Contratos: [`docs/contracts/`](docs/contracts/README.md)
+- Pruebas manuales: [`manual/test/fase-1/`](manual/test/fase-1/README.md)

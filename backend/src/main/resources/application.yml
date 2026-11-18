@@ -15,6 +15,13 @@ spring:
           # El decoder se resuelve de forma perezosa; Keycloak no tiene que estar arriba para arrancar.
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/kanban/protocol/openid-connect/certs}
 
+# OpenAPI/Swagger UI desactivados por defecto; se habilitan en los perfiles local y test.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 management:
   endpoints:
     web:

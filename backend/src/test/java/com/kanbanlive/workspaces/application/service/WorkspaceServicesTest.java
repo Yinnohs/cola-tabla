@@ -1,0 +1,85 @@
+package com.kanbanlive.workspaces.application.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.kanbanlive.sharedkernel.domain.ValidationException;
+import com.kanbanlive.testsupport.FixedClock;
+import com.kanbanlive.testsupport.SequentialIdGenerator;
+import com.kanbanlive.workspaces.application.port.in.CreateWorkspaceUseCase.CreateWorkspaceCommand;
+import com.kanbanlive.workspaces.application.port.in.WorkspaceView;
+import com.kanbanlive.workspaces.application.port.out.WorkspaceRepository;
+import com.kanbanlive.workspaces.domain.model.Workspace;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+
+class WorkspaceServicesTest {
+
+    /** Fake en memoria del puerto de salida. */
+    static final class InMemoryWorkspaceRepository implements WorkspaceRepository {
+        final Map<UUID, Workspace> store = new LinkedHashMap<>();
+
+        @Override
+        public Workspace save(Workspace w) {
+            store.put(w.id(), w);
+            return w;
+        }
+
+        @Override
+        public Optional<Workspace> findById(UUID id) {
+            return Optional.ofNullable(store.get(id));
+        }
+
+        @Override
+        public boolean existsById(UUID id) {
+            return store.containsKey(id);
+        }
+
+        @Override
+        public List<Workspace> findAll() {
+            return new ArrayList<>(store.values());
+        }
+    }
+
+    final InMemoryWorkspaceRepository repo = new InMemoryWorkspaceRepository();
+    final FixedClock clock = new FixedClock(Instant.parse("2026-01-01T00:00:00Z"));
+    final CreateWorkspaceService create = new CreateWorkspaceService(repo, new SequentialIdGenerator(), clock);
+    final ListWorkspacesService list = new ListWorkspacesService(repo);
+    final CheckWorkspaceExistsService exists = new CheckWorkspaceExistsService(repo);
+
+    @Test
+    void createPersistsAndReturnsView() {
+        WorkspaceView view = create.execute(new CreateWorkspaceCommand("Acme"));
+        assertThat(view.id()).isEqualTo(SequentialIdGenerator.id(1));
+        assertThat(view.name()).isEqualTo("Acme");
+        assertThat(view.createdAt()).isEqualTo(clock.now());
+        assertThat(repo.store).containsKey(view.id());
+    }
+
+    @Test
+    void createRejectsInvalidName() {
+        assertThatThrownBy(() -> create.execute(new CreateWorkspaceCommand(" ")))
+                .isInstanceOf(ValidationException.class);
+        assertThat(repo.store).isEmpty();
+    }
+
+    @Test
+    void listReturnsAll() {
+        create.execute(new CreateWorkspaceCommand("A"));
+        create.execute(new CreateWorkspaceCommand("B"));
+        assertThat(list.execute()).extracting(WorkspaceView::name).containsExactly("A", "B");
+    }
+
+    @Test
+    void existsReflectsRepository() {
+        WorkspaceView view = create.execute(new CreateWorkspaceCommand("A"));
+        assertThat(exists.execute(view.id())).isTrue();
+        assertThat(exists.execute(UUID.randomUUID())).isFalse();
+    }
+}

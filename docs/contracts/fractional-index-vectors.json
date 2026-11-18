@@ -1,0 +1,35 @@
+{
+  "description": "Vectores de FractionalIndex compartidos por backend (jqwik/JUnit) y frontend (vitest). Alfabeto en orden ASCII; orden = comparacion de strings (COLLATE C).",
+  "alphabet": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  "exhaustionLength": 32,
+  "between": [
+    {"prev": null, "next": null, "expected": "V"},
+    {"prev": null, "next": "V", "expected": "G"},
+    {"prev": "V", "next": null, "expected": "l"},
+    {"prev": "V", "next": "k", "expected": "d"},
+    {"prev": "V", "next": "W", "expected": "VV"},
+    {"prev": "V", "next": "V1", "expected": "V0V"},
+    {"prev": "0V", "next": "V", "expected": "G"},
+    {"prev": "z", "next": null, "expected": "zV"},
+    {"prev": "zz", "next": null, "expected": "zzV"},
+    {"prev": "1", "next": "2", "expected": "1V"},
+    {"prev": "1", "next": "11", "expected": "10V"},
+    {"prev": "A", "next": "B", "expected": "AV"},
+    {"prev": "Vz", "next": "W", "expected": "VzV"},
+    {"prev": null, "next": "1", "expected": "0V"},
+    {"prev": null, "next": "01", "expected": "00V"},
+    {"prev": "a", "next": "a1", "expected": "a0V"},
+    {"prev": "zzz", "next": null, "expected": "zzzV"},
+    {"prev": "1V", "next": "2", "expected": "1l"}
+  ],
+  "evenlySpaced": [
+    {"count": 1, "expected": ["V"]},
+    {"count": 2, "expected": ["K", "e"]},
+    {"count": 3, "expected": ["F", "U", "j"]},
+    {"count": 10, "expected": ["5", "A", "F", "K", "P", "U", "Z", "e", "j", "o"]},
+    {"count": 62, "expected": ["0z", "1y", "2x", "3w", "4v", "5u", "6t", "7s", "8r", "9q", "Ap", "Bo", "Cn", "Dm", "El", "Fk", "Gj", "Hi", "Ih", "Jg", "Kf", "Le", "Md", "Nc", "Ob", "Pa", "QZ", "RY", "SX", "TW", "UV", "VU", "WT", "XS", "YR", "ZQ", "aP", "bO", "cN", "dM", "eL", "fK", "gJ", "hI", "iH", "jG", "kF", "lE", "mD", "nC", "oB", "pA", "q9", "r8", "s7", "t6", "u5", "v4", "w3", "x2", "y1", "z"]},
+    {"count": 100, "expected": ["0c", "1E", "1q", "2S", "34", "3g", "4I", "4u", "5W", "68", "6k", "7M", "7y", "8a", "9C", "9o", "AQ", "B2", "Be", "CG", "Cs", "DU", "E6", "Ei", "FK", "Fw", "GY", "HA", "Hm", "IO", "J", "Jc", "KE", "Kq", "LS", "M4", "Mg", "NI", "Nu", "OW", "P8", "Pk", "QM", "Qy", "Ra", "SC", "So", "TQ", "U2", "Ue", "VG", "Vs", "WU", "X6", "Xi", "YK", "Yw", "ZY", "aA", "am", "bO", "c", "cc", "dE", "dq", "eS", "f4", "fg", "gI", "gu", "hW", "i8", "ik", "jM", "jy", "ka", "lC", "lo", "mQ", "n2", "ne", "oG", "os", "pU", "q6", "qi", "rK", "rw", "sY", "tA", "tm", "uO", "v", "vc", "wE", "wq", "xS", "y4", "yg", "zI"]}
+  ],
+  "invalid": ["", "0", "V0", "a-b", "V W", "\u00e9"],
+  "orderedAscending": ["0V", "1", "1V", "2", "A", "Az", "B", "V", "a", "z", "zV"]
+}

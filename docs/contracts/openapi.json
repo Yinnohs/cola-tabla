@@ -1,0 +1,726 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Kanban Live API",
+    "description" : "REST de Workspace -> Board -> List -> Card. Errores: RFC 7807 con `code` estable.",
+    "version" : "0.1.0"
+  },
+  "security" : [ {
+    "bearer-jwt" : [ ]
+  } ],
+  "paths" : {
+    "/api/workspaces" : {
+      "get" : {
+        "tags" : [ "Workspaces" ],
+        "summary" : "Listar workspaces",
+        "operationId" : "listWorkspaces",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WorkspaceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Workspaces" ],
+        "summary" : "Crear workspace",
+        "operationId" : "createWorkspace",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateWorkspaceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{workspaceId}/boards" : {
+      "post" : {
+        "tags" : [ "Boards" ],
+        "summary" : "Crear tablero en un workspace",
+        "operationId" : "createBoard",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateBoardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{listId}/move" : {
+      "post" : {
+        "tags" : [ "Lists" ],
+        "summary" : "Mover lista entre vecinas (prev/next)",
+        "operationId" : "moveList",
+        "parameters" : [ {
+          "name" : "listId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MoveListRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{listId}/cards" : {
+      "post" : {
+        "tags" : [ "Cards" ],
+        "summary" : "Crear tarjeta al final de la lista",
+        "operationId" : "createCard",
+        "parameters" : [ {
+          "name" : "listId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateCardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cards/{cardId}/move" : {
+      "post" : {
+        "tags" : [ "Cards" ],
+        "summary" : "Mover tarjeta: una sola fila actualizada",
+        "operationId" : "moveCard",
+        "parameters" : [ {
+          "name" : "cardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MoveCardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/boards/{boardId}/lists" : {
+      "post" : {
+        "tags" : [ "Lists" ],
+        "summary" : "Crear lista al final del tablero",
+        "operationId" : "createList",
+        "parameters" : [ {
+          "name" : "boardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateListRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{listId}" : {
+      "patch" : {
+        "tags" : [ "Lists" ],
+        "summary" : "Renombrar lista (version optimista)",
+        "operationId" : "renameList",
+        "parameters" : [ {
+          "name" : "listId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RenameListRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cards/{cardId}" : {
+      "delete" : {
+        "tags" : [ "Cards" ],
+        "summary" : "Borrar tarjeta",
+        "operationId" : "deleteCard",
+        "parameters" : [ {
+          "name" : "cardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "Cards" ],
+        "summary" : "Editar tarjeta (version optimista)",
+        "operationId" : "updateCard",
+        "parameters" : [ {
+          "name" : "cardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateCardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/boards/{boardId}" : {
+      "get" : {
+        "tags" : [ "Boards" ],
+        "summary" : "Tablero con listas y tarjetas ordenadas",
+        "operationId" : "getBoard",
+        "parameters" : [ {
+          "name" : "boardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardDetailsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "Boards" ],
+        "summary" : "Renombrar tablero (version optimista)",
+        "operationId" : "renameBoard",
+        "parameters" : [ {
+          "name" : "boardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RenameBoardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "CreateWorkspaceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "WorkspaceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "CreateBoardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "BoardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "workspaceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "MoveListRequest" : {
+        "type" : "object",
+        "properties" : {
+          "prevListId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "nextListId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "ListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "boardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "position" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "CreateCardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "maxLength" : 255,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 10000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "title" ]
+      },
+      "CardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "listId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "position" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "MoveCardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "listId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "prevCardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "nextCardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "listId" ]
+      },
+      "CreateListRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "RenameListRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "name", "version" ]
+      },
+      "UpdateCardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "maxLength" : 255,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 10000,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "title", "version" ]
+      },
+      "RenameBoardRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "name", "version" ]
+      },
+      "BoardCardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "position" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "BoardDetailsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "workspaceId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "lists" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BoardListResponse"
+            }
+          }
+        }
+      },
+      "BoardListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "position" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "cards" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BoardCardResponse"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "bearer-jwt" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
+      }
+    }
+  }
+}

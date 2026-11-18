@@ -1,0 +1,192 @@
+# Kanban Live — Fase 1. Mismos escenarios que README.md, para REST Client (VS Code) / IntelliJ HTTP Client.
+# Requisitos: `docker compose up -d` en infra/ y backend con perfil local en :8080.
+# Ejecuta las peticiones EN ORDEN (las variables se encadenan con las respuestas).
+# El token dura 5 min: vuelve a ejecutar "token" si recibes 401.
+
+@api = http://localhost:8080
+@keycloak = http://localhost:8180
+
+### token (cliente kanban-dev-cli solo para desarrollo local; password grant)
+# @name token
+POST {{keycloak}}/realms/kanban/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=kanban-dev-cli&username=owner&password=owner
+
+###
+@jwt = {{token.response.body.access_token}}
+
+### 1. crear workspace
+# @name workspace
+POST {{api}}/api/workspaces
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "Equipo Demo" }
+
+###
+@workspaceId = {{workspace.response.body.id}}
+
+### 1. listar workspaces
+GET {{api}}/api/workspaces
+Authorization: Bearer {{jwt}}
+
+### 1. crear board
+# @name board
+POST {{api}}/api/workspaces/{{workspaceId}}/boards
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "Sprint 1" }
+
+###
+@boardId = {{board.response.body.id}}
+
+### 1. crear lista Todo
+# @name todo
+POST {{api}}/api/boards/{{boardId}}/lists
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "Todo" }
+
+###
+@todoId = {{todo.response.body.id}}
+
+### 1. crear lista Doing
+# @name doing
+POST {{api}}/api/boards/{{boardId}}/lists
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "Doing" }
+
+###
+@doingId = {{doing.response.body.id}}
+
+### 1. crear tarjeta 1
+# @name card1
+POST {{api}}/api/lists/{{todoId}}/cards
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "Tarjeta 1" }
+
+###
+@card1 = {{card1.response.body.id}}
+
+### 1. crear tarjeta 2
+# @name card2
+POST {{api}}/api/lists/{{todoId}}/cards
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "Tarjeta 2", "description": "detalle" }
+
+###
+@card2 = {{card2.response.body.id}}
+
+### 1. crear tarjeta 3
+# @name card3
+POST {{api}}/api/lists/{{todoId}}/cards
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "Tarjeta 3" }
+
+###
+@card3 = {{card3.response.body.id}}
+
+### 2. tablero completo (listas y tarjetas ordenadas por position)
+GET {{api}}/api/boards/{{boardId}}
+Authorization: Bearer {{jwt}}
+
+### 3a. mover tarjeta 3 entre 1 y 2 (misma lista): solo cambia su fila (version 0 -> 1)
+POST {{api}}/api/cards/{{card3}}/move
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "listId": "{{todoId}}", "prevCardId": "{{card1}}", "nextCardId": "{{card2}}" }
+
+### 3b. mover tarjeta 1 a la lista Doing (vacia, sin vecinas)
+POST {{api}}/api/cards/{{card1}}/move
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "listId": "{{doingId}}" }
+
+### 3c. mover lista Doing al principio (antes de Todo)
+POST {{api}}/api/lists/{{doingId}}/move
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "nextListId": "{{todoId}}" }
+
+### 4. editar tarjeta 2 con la version actual (0) -> 200, version 1
+PATCH {{api}}/api/cards/{{card2}}
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "Tarjeta 2 editada", "description": "x", "version": 0 }
+
+### 4. editar tarjeta 2 con la version vieja (0) -> 409 STALE_VERSION
+PATCH {{api}}/api/cards/{{card2}}
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "conflicto", "version": 0 }
+
+### renombrar board (version actual 0) / lista
+PATCH {{api}}/api/boards/{{boardId}}
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "Sprint 1 (renombrado)", "version": 0 }
+
+###
+PATCH {{api}}/api/lists/{{todoId}}
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "Todo (renombrada)", "version": 0 }
+
+### 5. 404 board inexistente
+GET {{api}}/api/boards/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{jwt}}
+
+### 5. 404 lista inexistente al crear tarjeta
+POST {{api}}/api/lists/00000000-0000-0000-0000-000000000000/cards
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "x" }
+
+### 5. 422 nombre vacio
+POST {{api}}/api/workspaces
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "name": "" }
+
+### 5. 422 falta version
+PATCH {{api}}/api/cards/{{card2}}
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{ "title": "sin version" }
+
+### 5. 401 sin token
+GET {{api}}/api/workspaces
+
+### 5. 401 token invalido
+GET {{api}}/api/workspaces
+Authorization: Bearer basura
+
+### borrar tarjeta 3 -> 204 (segunda vez 404)
+DELETE {{api}}/api/cards/{{card3}}
+Authorization: Bearer {{jwt}}
+
+### 7. OpenAPI (publico en perfil local)
+GET {{api}}/v3/api-docs
+
+### 6. Rebalanceo: ver README.md y rebalance-demo.sh (necesita ~200 peticiones; no es práctico a mano)
