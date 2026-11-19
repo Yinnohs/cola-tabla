@@ -1,30 +1,36 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router'
 import { App } from './app/App'
 import { PortsProvider } from './app/di'
 import { createPorts } from './app/di/create-ports'
-import { AppError } from './shared/lib'
+import {
+  AccessNoticesContext,
+  AuthProvider,
+  createAccessNotices,
+  createAppQueryClient,
+} from './app/providers'
 import './styles.css'
 
-// Un 4xx (p. ej. 404 de un workspace inexistente) no se arregla reintentando.
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (count, error) => !(error instanceof AppError && error.status < 500) && count < 3,
-    },
-  },
-})
 const ports = createPorts()
+const notices = createAccessNotices()
+const queryClient = createAppQueryClient({ auth: ports.auth, notices })
+
+// Restaura la sesion (sessionStorage) ANTES de pintar: sin efectos, el store externo avisa al terminar.
+void ports.auth.initialize()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <PortsProvider ports={ports}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AccessNoticesContext.Provider value={notices}>
+          <AuthProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </AuthProvider>
+        </AccessNoticesContext.Provider>
       </PortsProvider>
     </QueryClientProvider>
   </StrictMode>,

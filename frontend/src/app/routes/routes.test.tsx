@@ -39,8 +39,10 @@ describe('routing workspace -> board', () => {
   })
 
   it('el tablero muestra su nombre como titulo y enlaza de vuelta al workspace', async () => {
-    const board = aBoard({ name: 'Directo' })
+    const ws = aWorkspace()
+    const board = aBoard({ name: 'Directo', workspaceId: ws.id })
     renderAt(`/boards/${board.id}`, {
+      workspaces: new InMemoryWorkspaceRepository([ws]),
       boards: new InMemoryBoardRepository([aBoardDetails({ board })]),
     })
     expect(await screen.findByRole('heading', { level: 1, name: /Directo/ })).toBeInTheDocument()
@@ -51,12 +53,18 @@ describe('routing workspace -> board', () => {
   })
 
   it('abre un tablero por URL', async () => {
-    const board = aBoard({ name: 'Directo' })
+    const ws = aWorkspace()
+    const board = aBoard({ name: 'Directo', workspaceId: ws.id })
     renderWithPorts(
       <MemoryRouter initialEntries={[`/boards/${board.id}`]}>
         <AppRoutes />
       </MemoryRouter>,
-      { ports: { boards: new InMemoryBoardRepository([aBoardDetails({ board })]) } },
+      {
+        ports: {
+          workspaces: new InMemoryWorkspaceRepository([ws]),
+          boards: new InMemoryBoardRepository([aBoardDetails({ board })]),
+        },
+      },
     )
     expect(await screen.findByRole('heading', { name: /Directo/ })).toBeInTheDocument()
   })

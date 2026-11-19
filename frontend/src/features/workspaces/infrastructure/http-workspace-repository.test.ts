@@ -14,6 +14,7 @@ const dto = {
   name: 'Equipo',
   version: 0,
   createdAt: '2026-01-01T10:00:00Z',
+  role: 'EDITOR',
 }
 
 describe('HttpWorkspaceRepository', () => {

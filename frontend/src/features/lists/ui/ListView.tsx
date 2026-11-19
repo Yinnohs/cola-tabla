@@ -11,10 +11,19 @@ interface ListViewProps {
   children?: ReactNode
   /** Zona inferior (p. ej. formulario de nueva tarjeta). */
   footer?: ReactNode
+  /** false (rol VIEWER): sin renombrado. */
+  canEdit?: boolean
 }
 
 /** Columna de una lista: cabecera con renombrado inline + hueco para tarjetas y pie. */
-export function ListView({ boardId, list, handle, children, footer }: ListViewProps) {
+export function ListView({
+  boardId,
+  list,
+  handle,
+  children,
+  footer,
+  canEdit = true,
+}: ListViewProps) {
   const rename = useRenameList(boardId)
   const [draft, setDraft] = useState<string | null>(null)
 
@@ -31,14 +40,16 @@ export function ListView({ boardId, list, handle, children, footer }: ListViewPr
         {draft === null ? (
           <>
             <h2 className="list-title">{list.name}</h2>
-            <button
-              type="button"
-              className="btn-ghost"
-              aria-label={`Renombrar lista ${list.name}`}
-              onClick={() => setDraft(list.name)}
-            >
-              Renombrar
-            </button>
+            {canEdit && (
+              <button
+                type="button"
+                className="btn-ghost"
+                aria-label={`Renombrar lista ${list.name}`}
+                onClick={() => setDraft(list.name)}
+              >
+                Renombrar
+              </button>
+            )}
           </>
         ) : (
           <form

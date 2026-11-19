@@ -424,7 +424,7 @@ Frontend:
 | --- | --- |
 | 0 Base | ⬜ pendiente |
 | 1 Dominio y REST | ⬜ |
-| 2 Auth multi-tenant | ⬜ |
+| 2 Auth multi-tenant | ✅ backend (B2.1–B2.7) + frontend (F2.1–F2.8, ADR-0009): login OIDC, 401/403, UI por rol, gestión de miembros (`role` en workspace, `GET`/`DELETE` miembros) |
 | 3 Tiempo real | ⬜ |
 | 4 Conflictos/reconexión | 🟨 backend hecho (B4.1–B4.6, ADR-0005/0006); frontend pendiente |
 | 5 Presencia | ⬜ |

@@ -29,7 +29,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Listar los miembros del workspace (solo OWNER) */
+        get: operations["listMembers"];
         put?: never;
         /** Invitar a un usuario al workspace (solo OWNER) */
         post: operations["inviteMember"];
@@ -135,7 +136,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Quitar a un miembro del workspace (solo OWNER) */
+        delete: operations["removeMember"];
         options?: never;
         head?: never;
         /** Cambiar el rol de un miembro (solo OWNER) */
@@ -212,6 +214,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/boards/{boardId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eventos del tablero con seq > since (resync tras una desconexion) */
+        get: operations["getBoardEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -227,6 +246,7 @@ export interface components {
             version?: number;
             /** Format: date-time */
             createdAt?: string;
+            role?: string;
         };
         InviteMemberRequest: {
             userId: string;
@@ -349,6 +369,28 @@ export interface components {
             version?: number;
             cards?: components["schemas"]["BoardCardResponse"][];
         };
+        BoardEventsResponse: {
+            /** Format: uuid */
+            boardId?: string;
+            /** Format: int64 */
+            since?: number;
+            /** Format: int64 */
+            lastSeq?: number;
+            events?: components["schemas"]["Event"][];
+        };
+        Event: {
+            /** Format: uuid */
+            boardId?: string;
+            /** Format: int64 */
+            seq?: number;
+            type?: string;
+            payload?: unknown;
+            clientId?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: int32 */
+            schemaVersion?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -398,6 +440,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+        };
+    };
+    listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"][];
                 };
             };
         };
@@ -595,6 +659,27 @@ export interface operations {
             };
         };
     };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     changeMemberRole: {
         parameters: {
             query?: never;
@@ -772,6 +857,39 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+        };
+    };
+    getBoardEvents: {
+        parameters: {
+            query: {
+                since: number;
+            };
+            header?: never;
+            path: {
+                boardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description since negativo o mayor que el seq actual (code INVALID_SINCE) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardEventsResponse"];
+                };
+            };
+            /** @description Demasiado atrasado o log purgado: recargar el tablero (code EVENTS_GONE) */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardEventsResponse"];
                 };
             };
         };

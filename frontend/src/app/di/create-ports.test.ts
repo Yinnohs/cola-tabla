@@ -1,23 +1,41 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createPorts, devToken } from './create-ports'
+import { createPorts, oidcConfigFromEnv } from './create-ports'
 
 afterEach(() => vi.unstubAllEnvs())
 
-describe('devToken (solo desarrollo)', () => {
-  it('sin VITE_DEV_TOKEN no hay token', () => {
-    vi.stubEnv('VITE_DEV_TOKEN', '')
-    expect(devToken()).toBeNull()
+describe('oidcConfigFromEnv', () => {
+  it('usa los valores de desarrollo por defecto (Keycloak local, cliente kanban-web)', () => {
+    vi.stubEnv('VITE_OIDC_AUTHORITY', '')
+    vi.stubEnv('VITE_OIDC_CLIENT_ID', '')
+    expect(oidcConfigFromEnv('http://localhost:5173')).toEqual({
+      authority: 'http://localhost:8180/realms/kanban',
+      clientId: 'kanban-web',
+      redirectUri: 'http://localhost:5173/auth/callback',
+      postLogoutRedirectUri: 'http://localhost:5173/auth/signed-out',
+    })
   })
 
-  it('en dev devuelve VITE_DEV_TOKEN', () => {
-    vi.stubEnv('VITE_DEV_TOKEN', 'jwt-de-prueba')
-    expect(devToken()).toBe('jwt-de-prueba')
-    expect(createPorts().auth.getToken()).toBe('jwt-de-prueba')
+  it('las variables VITE_OIDC_* tienen prioridad', () => {
+    vi.stubEnv('VITE_OIDC_AUTHORITY', 'https://idp.example/realms/x')
+    vi.stubEnv('VITE_OIDC_CLIENT_ID', 'otro')
+    vi.stubEnv('VITE_OIDC_REDIRECT_URI', 'https://app.example/auth/callback')
+    vi.stubEnv('VITE_OIDC_POST_LOGOUT_REDIRECT_URI', 'https://app.example/')
+    expect(oidcConfigFromEnv('http://x')).toEqual({
+      authority: 'https://idp.example/realms/x',
+      clientId: 'otro',
+      redirectUri: 'https://app.example/auth/callback',
+      postLogoutRedirectUri: 'https://app.example/',
+    })
   })
+})
 
-  it('fuera de dev (build de produccion) se ignora', () => {
-    vi.stubEnv('VITE_DEV_TOKEN', 'jwt-de-prueba')
-    vi.stubEnv('DEV', false)
-    expect(devToken()).toBeNull()
+describe('createPorts', () => {
+  it('cablea todos los puertos y la sesion empieza en loading, sin token', () => {
+    const ports = createPorts()
+    expect(Object.keys(ports).sort()).toEqual(
+      ['auth', 'boards', 'cards', 'lists', 'members', 'workspaces'].sort(),
+    )
+    expect(ports.auth.getSnapshot().status).toBe('loading')
+    expect(ports.auth.getToken()).toBeNull()
   })
 })

@@ -3,8 +3,8 @@
 Guía para probar a mano la SPA contra el backend real: crear workspace / tablero / listas / tarjetas, mover
 tarjetas y listas (ratón **y solo teclado**), renombrar, editar con conflicto `STALE_VERSION` y borrar.
 
-> El login con Keycloak llega en la Fase 2. Hasta entonces la SPA no tiene sesión: para que el backend no
-> responda `401` hay un **token solo para desarrollo** (`VITE_DEV_TOKEN`, ver sección 3).
+> **Actualizado en la Fase 2:** la SPA ya inicia sesión con Keycloak (OIDC + PKCE). El token de desarrollo
+> `VITE_DEV_TOKEN` se eliminó: la sección 3 describe el login real.
 
 ## 1. Requisitos
 
@@ -23,28 +23,23 @@ java -jar target/kanban-live-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active
 # en otra terminal: curl http://localhost:8080/actuator/health  ->  {"status":"UP"...}
 ```
 
-## 3. Token de desarrollo y `npm run dev`
+## 3. Login y `npm run dev`
 
-El cliente público `kanban-dev-cli` (solo desarrollo, ver README de esta carpeta, sección 4) permite obtener un
-JWT por contraseña. Se copia en `frontend/.env.local` (git lo ignora):
+La SPA redirige a Keycloak (`http://localhost:8180/realms/kanban`, cliente público `kanban-web`, PKCE). Usuarios de
+prueba: `owner/owner`, `editor/editor`, `viewer/viewer`. Copia `frontend/.env.example` a `frontend/.env.local` si
+quieres cambiar algún valor (los valores por defecto ya apuntan al Keycloak de desarrollo).
 
 ```bash
 cd frontend
-TOKEN=$(curl -s -X POST http://localhost:8180/realms/kanban/protocol/openid-connect/token \
-  -d grant_type=password -d client_id=kanban-dev-cli -d username=owner -d password=owner \
-  | sed -E 's/.*"access_token":"([^"]+)".*/\1/')
-echo "VITE_DEV_TOKEN=$TOKEN" > .env.local
 npm run dev        # http://localhost:5173 ; Vite proxea /api -> http://localhost:8080
 ```
 
-Notas de seguridad:
+Notas:
 
-- `VITE_DEV_TOKEN` solo lo lee `createPorts()` cuando `import.meta.env.DEV` es `true` (`npm run dev`). En
-  `npm run build` el código muerto se elimina y el token **no** acaba en el bundle (comprobado: el JS de `dist/` no
-  contiene `VITE_DEV_TOKEN`).
-- El token dura 1 hora. Si empiezas a ver errores `401`, repite el bloque anterior y recarga la página (Vite
-  reinicia solo al cambiar `.env.local`; si no, reinicia `npm run dev`).
-- Nunca pongas `.env.local` en git ni uses este mecanismo fuera de desarrollo; la Fase 2 lo sustituye por Keycloak.
+- Los tokens viven solo en `sessionStorage` y se renuevan solos con el `refresh_token` (scope `offline_access`).
+  Si el realm se importó antes de la Fase 2, recrea el volumen (`docker compose down -v`) para que los usuarios
+  reciban el rol `offline_access`.
+- Con el backend en perfil `local` (seguridad desactivada) la SPA sigue pidiendo login, pero el backend ignora el token.
 
 ## 4. Flujos a probar
 

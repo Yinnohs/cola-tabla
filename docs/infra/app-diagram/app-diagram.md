@@ -103,8 +103,8 @@ flowchart TD
     subgraph Hoy["Implementado hoy"]
         Dev["Desarrollador"] -->|"POST /realms/kanban/protocol/openid-connect/token<br/>client kanban-dev-cli, password grant"| KCt["Keycloak :8180<br/>realm kanban"]
         KCt -->|"access_token RS256, 3600 s<br/>iss = http://localhost:8180/realms/kanban (KC_HOSTNAME)"| Dev
-        Dev -->|"curl o frontend/.env.local<br/>VITE_DEV_TOKEN"| Env["devToken() en create-ports.ts<br/>solo si import.meta.env.DEV"]
-        Env -->|"Authorization: Bearer"| API["Backend /api"]
+        Dev -->|"login en la SPA (Fase 2)<br/>owner / editor / viewer"| SPAi["SPA kanban-web<br/>oidc-client-ts, sessionStorage"]
+        SPAi -->|"Authorization: Bearer"| API["Backend /api"]
     end
 
     subgraph Back["Backend: decision segun propiedad"]
@@ -117,7 +117,6 @@ flowchart TD
     subgraph Plan["Planificado (Fase 2 front)"]
         SPA["SPA kanban-web (public client)"] -.->|"Authorization Code + PKCE S256<br/>redirect localhost:5173/* o localhost:8000/*"| KCl["Keycloak login"]
         KCl -.->|"code a tokens"| SPA
-        SPA -.->|"sustituye devToken por el token OIDC"| API
         SPA -.->|"token en CONNECT y SUBSCRIBE STOMP (Fase 3)"| WS["WebSocket"]
     end
 ```
@@ -252,7 +251,9 @@ Imágenes: `backend/Dockerfile` (build `eclipse-temurin:21-jdk`, runtime `21-jre
 | `springdoc.api-docs/swagger-ui.enabled` | `application.yml` `false`; `local`, `docker` y `test` `true` | boolean | habilitado en local, docker y test |
 | `management.endpoints.web.exposure.include` | `application.yml` | `health,info` | todos |
 | `VITE_API_BASE_URL` | `frontend/.env.example` | vacío = mismo origen | dev y build (en prod, nginx `/api`) |
-| `VITE_DEV_TOKEN` | `frontend/.env.local` (ignorado por git) | JWT de `kanban-dev-cli` | solo `import.meta.env.DEV`; nunca en `vite build` |
+| `VITE_OIDC_AUTHORITY` | `frontend/.env.example` | `http://localhost:8180/realms/kanban` | SPA (login OIDC) |
+| `VITE_OIDC_CLIENT_ID` | `frontend/.env.example` | `kanban-web` | SPA (cliente público PKCE) |
+| `VITE_OIDC_REDIRECT_URI` / `VITE_OIDC_POST_LOGOUT_REDIRECT_URI` | `frontend/.env.example` | `<origen>/auth/callback` / `<origen>/auth/signed-out` | SPA; deben coincidir con `redirectUris` / `post.logout.redirect.uris` del cliente `kanban-web` |
 | `POSTGRES_DB/USER/PASSWORD` | compose | `kanban/kanban/kanban` | contenedor postgres |
 | `KC_BOOTSTRAP_ADMIN_USERNAME/PASSWORD` | compose | `${KC_ADMIN_USER:-admin}` / `${KC_ADMIN_PASSWORD:-admin}` (solo desarrollo) | contenedor keycloak |
 | `KC_HTTP_PORT`, `KC_HEALTH_ENABLED` | compose | `8180`, `true` | contenedor keycloak |

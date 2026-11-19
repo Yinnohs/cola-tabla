@@ -306,3 +306,60 @@ textarea {
 .conflict p {
   margin: 0 0 0.5rem;
 }
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.user-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.notice {
+  margin: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.notice--forbidden {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.access-denied {
+  max-width: 32rem;
+  margin: 2rem auto;
+  padding: 1rem;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.members ul {
+  list-style: none;
+  padding: 0;
+}
+
+.members li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.members .member-id {
+  flex: 1;
+  overflow-wrap: anywhere;
+}

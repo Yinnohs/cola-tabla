@@ -1,8 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import { CreateBoardForm, useBoards } from '../../features/boards'
-import { useWorkspace } from '../../features/workspaces'
-import { workspaceId, type WorkspaceId } from '../../shared/kernel'
-import { AppError } from '../../shared/lib'
+import { MembersPanel, useWorkspace } from '../../features/workspaces'
+import { canEdit, workspaceId, type WorkspaceId } from '../../shared/kernel'
+import { AppError, isForbidden } from '../../shared/lib'
+import { AccessDenied } from '../../shared/ui'
 
 export function WorkspacePage() {
   const { workspaceId: raw } = useParams()
@@ -16,6 +17,13 @@ function WorkspaceContent({ id }: { id: WorkspaceId }) {
 
   if (workspace.isPending) return <p role="status">Cargando workspace...</p>
   if (workspace.isError) {
+    if (isForbidden(workspace.error)) {
+      return (
+        <AccessDenied>
+          <Link to="/">Volver a workspaces</Link>
+        </AccessDenied>
+      )
+    }
     const notFound = workspace.error instanceof AppError && workspace.error.status === 404
     return (
       <section>
@@ -36,7 +44,10 @@ function WorkspaceContent({ id }: { id: WorkspaceId }) {
       </p>
       <h1>{workspace.data.name}</h1>
       <BoardsOfWorkspace id={id} />
-      <CreateBoardForm workspaceId={id} onCreated={(b) => void navigate(`/boards/${b.id}`)} />
+      {canEdit(workspace.data.role) && (
+        <CreateBoardForm workspaceId={id} onCreated={(b) => void navigate(`/boards/${b.id}`)} />
+      )}
+      <MembersPanel workspaceId={id} />
     </section>
   )
 }

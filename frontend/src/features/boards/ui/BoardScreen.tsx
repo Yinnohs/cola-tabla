@@ -3,6 +3,8 @@ import type { BoardId } from '../../../shared/kernel'
 import { selectLists, type NormalizedBoard } from '../domain/normalized-board'
 import { useBoard } from '../application/use-board'
 import { useRenameBoard } from '../application/use-rename-board'
+import { isForbidden } from '../../../shared/lib'
+import { AccessDenied } from '../../../shared/ui'
 
 interface BoardScreenProps {
   boardId: BoardId
@@ -11,16 +13,21 @@ interface BoardScreenProps {
    * la vista con listas y tarjetas. Sin `children` se muestra una vista de solo lectura.
    */
   children?: (board: NormalizedBoard) => ReactNode
+  /** false (rol VIEWER): sin renombrado. Quien compone lo resuelve con el rol del workspace. */
+  canEdit?: boolean
 }
 
 /** Pantalla del tablero: carga + cabecera con renombrado; el cuerpo lo inyecta quien compone. */
-export function BoardScreen({ boardId, children }: BoardScreenProps) {
+export function BoardScreen({ boardId, children, canEdit = true }: BoardScreenProps) {
   const { data, isPending, isError, error } = useBoard(boardId)
   const rename = useRenameBoard(boardId)
   const [draft, setDraft] = useState<string | null>(null)
 
   if (isPending) return <p role="status">Cargando tablero...</p>
-  if (isError) return <p role="alert">No se pudo cargar el tablero: {error.message}</p>
+  if (isError) {
+    if (isForbidden(error)) return <AccessDenied />
+    return <p role="alert">No se pudo cargar el tablero: {error.message}</p>
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -33,9 +40,11 @@ export function BoardScreen({ boardId, children }: BoardScreenProps) {
       {draft === null ? (
         <h1 className="board-title">
           {data.board.name}{' '}
-          <button type="button" className="btn-ghost" onClick={() => setDraft(data.board.name)}>
-            Renombrar
-          </button>
+          {canEdit && (
+            <button type="button" className="btn-ghost" onClick={() => setDraft(data.board.name)}>
+              Renombrar
+            </button>
+          )}
         </h1>
       ) : (
         <form onSubmit={submit} aria-label="Renombrar tablero" className="inline-form">

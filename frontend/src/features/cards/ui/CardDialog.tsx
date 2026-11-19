@@ -10,10 +10,12 @@ interface CardDialogProps {
   /** Tarjeta vigente en la cache (el padre solo monta el dialogo mientras exista). */
   card: Card
   onClose: () => void
+  /** true (rol VIEWER): solo lectura, sin guardar ni eliminar. */
+  readOnly?: boolean
 }
 
 /** Modal de edicion de tarjeta: titulo/descripcion, borrado y mensaje de conflicto (STALE_VERSION). */
-export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
+export function CardDialog({ boardId, card, onClose, readOnly = false }: CardDialogProps) {
   const titleId = useId()
   const update = useUpdateCard(boardId)
   const remove = useDeleteCard(boardId)
@@ -68,7 +70,7 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
       >
-        <h2 id={titleId}>Editar tarjeta</h2>
+        <h2 id={titleId}>{readOnly ? 'Tarjeta' : 'Editar tarjeta'}</h2>
         <form onSubmit={submit}>
           <label>
             Título
@@ -76,6 +78,7 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={255}
+              readOnly={readOnly}
               autoFocus
             />
           </label>
@@ -86,6 +89,7 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
               onChange={(e) => setDescription(e.target.value)}
               maxLength={10000}
               rows={6}
+              readOnly={readOnly}
             />
           </label>
           {conflict && (
@@ -102,13 +106,15 @@ export function CardDialog({ boardId, card, onClose }: CardDialogProps) {
           {otherError && <p role="alert">{update.error.message}</p>}
           {remove.isError && <p role="alert">{remove.error.message}</p>}
           <div className="dialog-actions">
-            <button type="submit" disabled={update.isPending || conflict}>
-              Guardar
-            </button>
+            {!readOnly && (
+              <button type="submit" disabled={update.isPending || conflict}>
+                Guardar
+              </button>
+            )}
             <button type="button" onClick={onClose}>
-              Cancelar
+              {readOnly ? 'Cerrar' : 'Cancelar'}
             </button>
-            {confirmingDelete ? (
+            {readOnly ? null : confirmingDelete ? (
               <>
                 <button type="button" className="btn-danger" onClick={onDelete}>
                   Confirmar eliminación

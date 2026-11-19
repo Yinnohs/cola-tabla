@@ -2,16 +2,94 @@ import type { Ports } from '../../app/di'
 import { between, type FractionalIndex } from '../kernel'
 import { AppError, StaleVersionError } from '../lib'
 
-export function fakeAuthPort(token: string | null = 'test-token'): Ports['auth'] {
-  return { getToken: () => token }
+type AuthSessionValue = ReturnType<Ports['auth']['getSnapshot']>
+
+export const SIGNED_IN: AuthSessionValue = {
+  status: 'authenticated',
+  user: { id: 'user-1', name: 'Ana Test', email: 'ana@test.local' },
+}
+export const SIGNED_OUT: AuthSessionValue = { status: 'unauthenticated', user: null }
+export const SESSION_LOADING: AuthSessionValue = { status: 'loading', user: null }
+
+/** Fake del puerto de autenticacion: sesion controlable desde el test y registro de las llamadas. */
+type AuthPortType = Ports['auth']
+
+export class FakeAuthPort implements AuthPortType {
+  private session: AuthSessionValue
+  private token: string | null
+  private readonly listeners = new Set<() => void>()
+  readonly loginCalls: string[] = []
+  logoutCalls = 0
+  refreshCalls = 0
+  /** Resultado de la proxima renovacion. */
+  refreshResult = true
+  /** Ruta que devuelve completeLogin; si es un Error, rechaza. */
+  callbackResult: string | Error = '/'
+  loginFailure?: Error
+
+  constructor(session: AuthSessionValue = SIGNED_IN, token: string | null = 'test-token') {
+    this.session = session
+    this.token = session.status === 'authenticated' ? token : null
+  }
+
+  readonly getSnapshot = (): AuthSessionValue => this.session
+
+  readonly subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener)
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+
+  /** Cambia la sesion y avisa a los suscriptores (como haria el adapter real). */
+  setSession(session: AuthSessionValue, token: string | null = 'test-token') {
+    this.session = session
+    this.token = session.status === 'authenticated' ? token : null
+    this.listeners.forEach((l) => l())
+  }
+
+  initialize(): Promise<void> {
+    return Promise.resolve()
+  }
+
+  getToken(): string | null {
+    return this.token
+  }
+
+  login(returnTo: string): Promise<void> {
+    this.loginCalls.push(returnTo)
+    return this.loginFailure ? Promise.reject(this.loginFailure) : Promise.resolve()
+  }
+
+  completeLogin(): Promise<string> {
+    return typeof this.callbackResult === 'string'
+      ? Promise.resolve(this.callbackResult)
+      : Promise.reject(this.callbackResult)
+  }
+
+  logout(): Promise<void> {
+    this.logoutCalls += 1
+    return Promise.resolve()
+  }
+
+  refresh(): Promise<boolean> {
+    this.refreshCalls += 1
+    return Promise.resolve(this.refreshResult)
+  }
+}
+
+export function fakeAuthPort(token: string | null = 'test-token'): FakeAuthPort {
+  return new FakeAuthPort(SIGNED_IN, token)
 }
 
 // Tipos de dominio derivados de los puertos: shared/ no puede importar features/.
 type WorkspaceRepo = Ports['workspaces']
+type MemberRepo = Ports['members']
 type BoardRepo = Ports['boards']
 type ListRepo = Ports['lists']
 type CardRepo = Ports['cards']
 export type Workspace = Awaited<ReturnType<WorkspaceRepo['create']>>
+export type Member = Awaited<ReturnType<MemberRepo['invite']>>
 export type Board = Awaited<ReturnType<BoardRepo['create']>>
 export type BoardDetails = Awaited<ReturnType<BoardRepo['get']>>
 export type List = Awaited<ReturnType<ListRepo['create']>>
@@ -31,6 +109,18 @@ export function aWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     name: 'Workspace',
     version: 0,
     createdAt: '2026-01-01T00:00:00Z',
+    role: 'OWNER',
+    ...overrides,
+  }
+}
+
+export function aMember(overrides: Partial<Member> = {}): Member {
+  return {
+    id: nextId(),
+    workspaceId: nextId() as Member['workspaceId'],
+    userId: `user-${nextId().slice(-4)}`,
+    role: 'VIEWER',
+    version: 0,
     ...overrides,
   }
 }
@@ -120,6 +210,95 @@ export class InMemoryWorkspaceRepository implements WorkspaceRepo {
   }
 }
 
+/** Base comun de los fakes: fallo puntual y compuerta para observar el estado optimista. */
+abstract class FakeRepository {
+  /** Si se define, el siguiente metodo llamado rechaza con este error (una sola vez). */
+  failNextWith?: Error
+  private gate?: Promise<void>
+
+  /** La siguiente llamada queda pendiente hasta que se invoque la funcion devuelta. */
+  holdNext(): () => void {
+    let release!: () => void
+    this.gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    return release
+  }
+
+  protected async settle<T>(fn: () => T): Promise<T> {
+    const gate = this.gate
+    this.gate = undefined
+    if (gate) await gate
+    if (this.failNextWith) {
+      const e = this.failNextWith
+      this.failNextWith = undefined
+      throw e
+    }
+    return fn()
+  }
+}
+
+/** Miembros en memoria (por workspace) con las reglas del backend: duplicado y ultimo OWNER. */
+export class InMemoryMemberRepository extends FakeRepository implements MemberRepo {
+  items: Member[]
+
+  constructor(initial: Member[] = []) {
+    super()
+    this.items = [...initial]
+  }
+
+  list(workspaceId: Member['workspaceId']): Promise<Member[]> {
+    return this.settle(() => this.items.filter((m) => m.workspaceId === workspaceId))
+  }
+
+  invite(workspaceId: Member['workspaceId'], userId: string, role: Member['role']) {
+    return this.settle(() => {
+      if (this.find(workspaceId, userId)) {
+        throw new AppError('ya es miembro', 409, 'ALREADY_MEMBER')
+      }
+      const member = aMember({ workspaceId, userId, role })
+      this.items.push(member)
+      return member
+    })
+  }
+
+  changeRole(workspaceId: Member['workspaceId'], userId: string, role: Member['role']) {
+    return this.settle(() => {
+      const found = this.require(workspaceId, userId)
+      if (found.role === 'OWNER' && role !== 'OWNER' && this.owners(workspaceId) <= 1) {
+        throw new AppError('ultimo owner', 409, 'LAST_OWNER')
+      }
+      const updated = { ...found, role, version: found.version + 1 }
+      this.items = this.items.map((m) => (m === found ? updated : m))
+      return updated
+    })
+  }
+
+  remove(workspaceId: Member['workspaceId'], userId: string) {
+    return this.settle(() => {
+      const found = this.require(workspaceId, userId)
+      if (found.role === 'OWNER' && this.owners(workspaceId) <= 1) {
+        throw new AppError('ultimo owner', 409, 'LAST_OWNER')
+      }
+      this.items = this.items.filter((m) => m !== found)
+    })
+  }
+
+  private owners(workspaceId: Member['workspaceId']): number {
+    return this.items.filter((m) => m.workspaceId === workspaceId && m.role === 'OWNER').length
+  }
+
+  private find(workspaceId: Member['workspaceId'], userId: string): Member | undefined {
+    return this.items.find((m) => m.workspaceId === workspaceId && m.userId === userId)
+  }
+
+  private require(workspaceId: Member['workspaceId'], userId: string): Member {
+    const found = this.find(workspaceId, userId)
+    if (!found) throw new AppError('no es miembro', 404, 'NOT_FOUND')
+    return found
+  }
+}
+
 export class InMemoryBoardRepository implements BoardRepo {
   boards = new Map<string, BoardDetails>()
   failNextWith?: Error
@@ -172,34 +351,6 @@ export class InMemoryBoardRepository implements BoardRepo {
     } catch (e) {
       return Promise.reject(e instanceof Error ? e : new Error(String(e)))
     }
-  }
-}
-
-/** Base comun de los fakes: fallo puntual y compuerta para observar el estado optimista. */
-abstract class FakeRepository {
-  /** Si se define, el siguiente metodo llamado rechaza con este error (una sola vez). */
-  failNextWith?: Error
-  private gate?: Promise<void>
-
-  /** La siguiente llamada queda pendiente hasta que se invoque la funcion devuelta. */
-  holdNext(): () => void {
-    let release!: () => void
-    this.gate = new Promise<void>((resolve) => {
-      release = resolve
-    })
-    return release
-  }
-
-  protected async settle<T>(fn: () => T): Promise<T> {
-    const gate = this.gate
-    this.gate = undefined
-    if (gate) await gate
-    if (this.failNextWith) {
-      const e = this.failNextWith
-      this.failNextWith = undefined
-      throw e
-    }
-    return fn()
   }
 }
 
@@ -397,6 +548,7 @@ export function fakePorts(overrides: Partial<Ports> = {}): Ports {
   return {
     auth: fakeAuthPort(),
     workspaces: new InMemoryWorkspaceRepository(),
+    members: new InMemoryMemberRepository(),
     boards: new InMemoryBoardRepository(),
     lists: new InMemoryListRepository(),
     cards: new InMemoryCardRepository(),

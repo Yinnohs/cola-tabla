@@ -28,3 +28,13 @@ export class StaleVersionError extends AppError {
     this.name = 'StaleVersionError'
   }
 }
+
+/** 401: sin sesion valida (token ausente, caducado o rechazado). */
+export function isUnauthorized(error: unknown): error is AppError {
+  return error instanceof AppError && error.status === 401
+}
+
+/** 403: sesion valida pero sin permiso sobre el recurso. */
+export function isForbidden(error: unknown): error is AppError {
+  return error instanceof AppError && error.status === 403
+}
