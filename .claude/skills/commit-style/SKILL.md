@@ -11,10 +11,11 @@ Feature (<parte>): <qué se ha realizado>
 ```
 - Tipo: `Feature`, `Fix`, etc., con inicial mayúscula.
 - `<parte>` = la parte trabajada: `backend`, `front`, `infra`, `docs`.
-- Descripción: qué se ha realizado, concreta y en una línea. Ej.: `Feature (backend): fase 4 conflictos y reconexion`.
+- Descripción: qué se ha realizado, concreta y en una línea. Ej.: `Feature (backend): phase 4 conflicts and reconnection`.
 - Opcional: cuerpo con viñetas breves tras una línea en blanco.
 
 ## Reglas
+- **Siempre en inglés**: el mensaje completo (título y cuerpo) se escribe en inglés, aunque la conversación sea en español.
 - **Sin co-autor**: nunca añadir `Co-Authored-By` ni líneas de atribución a Claude, tampoco en PRs.
 - Solo hacer commit cuando el usuario lo pida.
 - No commitear secretos (`.env`, credenciales).
