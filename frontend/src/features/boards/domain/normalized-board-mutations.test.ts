@@ -24,6 +24,7 @@ const card = (id: typeof A, listId: typeof L1, position: string) => ({
 function sample(): NormalizedBoard {
   return normalizeBoard({
     board: { id: boardId('b'), workspaceId: workspaceId('w'), name: 'B', version: 0 },
+    lastSeq: 0,
     lists: [
       {
         id: L1,

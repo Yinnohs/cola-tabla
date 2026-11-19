@@ -91,4 +91,43 @@ describe('api client', () => {
       unwrap(api.DELETE('/api/cards/{cardId}', { params: { path: { cardId: 'c1' } } })),
     ).resolves.toBeUndefined()
   })
+
+  describe('cabecera X-Client-Id', () => {
+    const seen: Array<string | null> = []
+    function captureHeaders() {
+      seen.length = 0
+      server.use(
+        http.get(`${TEST_API_URL}/api/workspaces`, ({ request }) => {
+          seen.push(request.headers.get('x-client-id'))
+          return HttpResponse.json([])
+        }),
+        http.patch(`${TEST_API_URL}/api/boards/b1`, ({ request }) => {
+          seen.push(request.headers.get('x-client-id'))
+          return HttpResponse.json({})
+        }),
+      )
+    }
+    const rename = (api: ReturnType<typeof createApiClient>) =>
+      unwrap(
+        api.PATCH('/api/boards/{boardId}', {
+          params: { path: { boardId: 'b1' } },
+          body: { name: 'x', version: 0 },
+        }),
+      )
+
+    it('se envia en las escrituras y no en las lecturas', async () => {
+      captureHeaders()
+      const api = createApiClient({ baseUrl: TEST_API_URL, clientId: 'tab-7f3a' })
+      await unwrap(api.GET('/api/workspaces'))
+      await rename(api)
+      expect(seen).toEqual([null, 'tab-7f3a'])
+    })
+
+    it('sin clientId, o con uno invalido, no se envia', async () => {
+      captureHeaders()
+      await rename(createApiClient({ baseUrl: TEST_API_URL }))
+      await rename(createApiClient({ baseUrl: TEST_API_URL, clientId: 'con espacios' }))
+      expect(seen).toEqual([null, null])
+    })
+  })
 })

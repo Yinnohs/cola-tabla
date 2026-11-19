@@ -24,6 +24,7 @@ const aListView = (o: Partial<BoardListView> = {}): BoardListView => ({
 })
 const aBoardDetails = (o: Partial<BoardDetails> = {}): BoardDetails => ({
   board: { id: boardId(id()), workspaceId: workspaceId(id()), name: 'Board', version: 0 },
+  lastSeq: 0,
   lists: [],
   ...o,
 })

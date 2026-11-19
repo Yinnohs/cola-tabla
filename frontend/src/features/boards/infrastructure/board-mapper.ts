@@ -43,5 +43,9 @@ function toList(dto: BoardListDto): BoardListView {
 }
 
 export function toBoardDetails(dto: BoardDetailsDto): BoardDetails {
-  return { board: toBoard(dto), lists: (dto.lists ?? []).map(toList) }
+  return {
+    board: toBoard(dto),
+    lastSeq: requireField(dto.lastSeq, 'lastSeq'),
+    lists: (dto.lists ?? []).map(toList),
+  }
 }

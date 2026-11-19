@@ -21,6 +21,7 @@ Decisiones de arquitectura de Kanban Live. Una decisión = un fichero `NNNN-titu
 | [0005](0005-estrategia-de-conflictos.md) | Estrategia de conflictos (LWW para mover, 409 para editar) y retención del log | 4 | Aceptado |
 | [0006](0006-renovacion-de-jwt-en-websocket.md) | Renovación/expiración de JWT en WebSocket | 4 | Aceptado |
 | [0009](0009-autenticacion-spa-oidc-y-rol-en-ui.md) | Autenticación de la SPA (OIDC + PKCE), 401/403 globales y rol en la UI | 2 | Aceptado |
+| [0010](0010-tiempo-real-en-el-cliente-sin-use-effect.md) | Tiempo real en el cliente (STOMP + store externo sin `useEffect`) y `lastSeq` en la carga | 3 | Aceptado |
 | 0007 | Redis pub/sub vs RabbitMQ broker relay | 6 | Pendiente |
 
 Ver también: [`../../todos/`](../../todos/README.md) para las tareas que producen cada ADR.

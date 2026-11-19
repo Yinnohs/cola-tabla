@@ -1,7 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { usePorts } from '../../../app/di'
 import type { BoardId, CardId, ListId } from '../../../shared/kernel'
-import { boardKeys, selectCardsOf, upsertCard, type NormalizedBoard } from '../../boards'
+import {
+  boardKeys,
+  reconcileCard,
+  selectCardsOf,
+  upsertCard,
+  type NormalizedBoard,
+} from '../../boards'
 import { planCardMove, type CardMovePlan } from '../domain/card-ordering'
 
 /**
@@ -36,7 +42,9 @@ export function useMoveCard(boardId: BoardId) {
       void queryClient.invalidateQueries({ queryKey: key })
     },
     onSuccess: (card) => {
-      queryClient.setQueryData<NormalizedBoard>(key, (old) => (old ? upsertCard(old, card) : old))
+      queryClient.setQueryData<NormalizedBoard>(key, (old) =>
+        old ? reconcileCard(old, card) : old,
+      )
     },
   })
 

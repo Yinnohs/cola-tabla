@@ -22,5 +22,7 @@ export interface BoardListView {
 
 export interface BoardDetails {
   readonly board: Board
+  /** `seq` del ultimo evento incluido en esta carga (el WS reanuda en `lastSeq + 1`). */
+  readonly lastSeq: number
   readonly lists: readonly BoardListView[]
 }

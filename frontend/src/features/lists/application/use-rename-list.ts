@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { usePorts } from '../../../app/di'
 import type { BoardId, ListId } from '../../../shared/kernel'
-import { boardKeys, upsertList, type NormalizedBoard } from '../../boards'
+import { boardKeys, reconcileList, upsertList, type NormalizedBoard } from '../../boards'
 import { listName } from '../domain/list'
 import { InvalidListNameError } from './errors'
 import { toListEntity } from './to-entity'
@@ -46,7 +46,7 @@ export function useRenameList(boardId: BoardId) {
     },
     onSuccess: (list) => {
       queryClient.setQueryData<NormalizedBoard>(key, (old) =>
-        old ? upsertList(old, toListEntity(list)) : old,
+        old ? reconcileList(old, toListEntity(list)) : old,
       )
     },
   })

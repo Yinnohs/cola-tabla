@@ -162,7 +162,7 @@ export function aListView(overrides: Partial<BoardListView> = {}): BoardListView
 }
 
 export function aBoardDetails(overrides: Partial<BoardDetails> = {}): BoardDetails {
-  return { board: aBoard(), lists: [], ...overrides }
+  return { board: aBoard(), lastSeq: 0, lists: [], ...overrides }
 }
 
 // --- Fakes en memoria ---
@@ -324,7 +324,7 @@ export class InMemoryBoardRepository implements BoardRepo {
   create(workspaceId: Board['workspaceId'], name: string): Promise<Board> {
     return this.settle(() => {
       const board = aBoard({ workspaceId, name })
-      this.boards.set(board.id, { board, lists: [] })
+      this.boards.set(board.id, { board, lastSeq: 0, lists: [] })
       return board
     })
   }
@@ -531,6 +531,7 @@ export function fakeBoardPorts(details: BoardDetails): {
       a.position < b.position ? -1 : a.position > b.position ? 1 : 0
     return Promise.resolve({
       board: details.board,
+      lastSeq: details.lastSeq,
       lists: [...listRepo.items].sort(byPosition).map((l) => ({
         id: l.id,
         name: l.name,
@@ -543,6 +544,91 @@ export function fakeBoardPorts(details: BoardDetails): {
   return { boards: boardRepo, lists: listRepo, cards: cardRepo }
 }
 
+// --- Tiempo real ---
+
+type EventsPort = Ports['events']
+export type BoardEnvelope = Parameters<Parameters<EventsPort['subscribe']>[1]>[0]
+export type ConnectionStatus = Parameters<Parameters<EventsPort['subscribe']>[2]>[0]
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
+/** Un tipo de evento con su payload, sin los metadatos del envelope. */
+export type BoardEventBody = DistributiveOmit<
+  BoardEnvelope,
+  'boardId' | 'seq' | 'clientId' | 'occurredAt' | 'schemaVersion'
+>
+
+/** Envelope del contrato v1 a partir de un evento (por defecto sin clientId = escritura de otra pestana). */
+export function anEnvelope(
+  boardId: BoardEnvelope['boardId'],
+  seq: number,
+  event: BoardEventBody,
+  clientId: string | null = null,
+): BoardEnvelope {
+  return {
+    boardId,
+    seq,
+    clientId,
+    occurredAt: '2026-01-01T00:00:00Z',
+    schemaVersion: 1,
+    ...event,
+  } as BoardEnvelope
+}
+
+interface FakeSubscription {
+  readonly boardId: BoardEnvelope['boardId']
+  readonly onEvent: (envelope: BoardEnvelope) => void
+  readonly onStatus: (status: ConnectionStatus) => void
+  active: boolean
+}
+
+/**
+ * Fake del puerto de eventos en tiempo real: el test emite envelopes y estados a mano y observa
+ * suscripciones y consultas `since`.
+ */
+export class FakeBoardEvents implements EventsPort {
+  readonly subscriptions: FakeSubscription[] = []
+  readonly sinceCalls: Array<{ boardId: string; since: number }> = []
+  /** Si true, tras suscribirse notifica `connected` inmediatamente (si no, solo `connecting`). */
+  autoConnect = false
+  /** `lastSeq` que devuelve `fetchEventsSince` (por defecto el propio `since`: no hay nada nuevo). */
+  serverLastSeq?: number
+  /** Si se define, `fetchEventsSince` rechaza con este error. */
+  failSinceWith?: Error
+
+  subscribe(
+    boardId: FakeSubscription['boardId'],
+    onEvent: FakeSubscription['onEvent'],
+    onStatus: FakeSubscription['onStatus'],
+  ): () => void {
+    const sub: FakeSubscription = { boardId, onEvent, onStatus, active: true }
+    this.subscriptions.push(sub)
+    onStatus('connecting')
+    if (this.autoConnect) onStatus('connected')
+    return () => {
+      sub.active = false
+    }
+  }
+
+  fetchEventsSince(boardId: FakeSubscription['boardId'], since: number) {
+    this.sinceCalls.push({ boardId, since })
+    if (this.failSinceWith) return Promise.reject(this.failSinceWith)
+    return Promise.resolve({ boardId, since, lastSeq: this.serverLastSeq ?? since, events: [] })
+  }
+
+  get activeSubscriptions(): FakeSubscription[] {
+    return this.subscriptions.filter((s) => s.active)
+  }
+
+  /** Entrega un envelope a las suscripciones activas de su tablero. */
+  emit(envelope: BoardEnvelope) {
+    for (const s of this.activeSubscriptions)
+      if (s.boardId === envelope.boardId) s.onEvent(envelope)
+  }
+
+  setStatus(boardId: FakeSubscription['boardId'], status: ConnectionStatus) {
+    for (const s of this.activeSubscriptions) if (s.boardId === boardId) s.onStatus(status)
+  }
+}
+
 /** Puertos fake en memoria; cada test puede sobreescribir los que necesite. */
 export function fakePorts(overrides: Partial<Ports> = {}): Ports {
   return {
@@ -552,6 +638,8 @@ export function fakePorts(overrides: Partial<Ports> = {}): Ports {
     boards: new InMemoryBoardRepository(),
     lists: new InMemoryListRepository(),
     cards: new InMemoryCardRepository(),
+    events: new FakeBoardEvents(),
+    clientId: 'test-client',
     ...overrides,
   }
 }

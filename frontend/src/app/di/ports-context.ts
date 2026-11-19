@@ -3,6 +3,7 @@ import type { AuthPort } from '../../features/auth'
 import type { BoardRepository } from '../../features/boards'
 import type { CardRepository } from '../../features/cards'
 import type { ListRepository } from '../../features/lists'
+import type { BoardEventsPort } from '../../features/realtime'
 import type { MemberRepository, WorkspaceRepository } from '../../features/workspaces'
 
 /** Todos los puertos que los casos de uso pueden necesitar. Se amplía por feature. */
@@ -13,6 +14,10 @@ export interface Ports {
   boards: BoardRepository
   lists: ListRepository
   cards: CardRepository
+  /** Eventos de tablero en tiempo real (STOMP) y su log REST. */
+  events: BoardEventsPort
+  /** Identificador de esta pestana (`X-Client-Id`): permite ignorar el eco de las propias escrituras. */
+  clientId: string
 }
 
 export const PortsContext = createContext<Ports | null>(null)

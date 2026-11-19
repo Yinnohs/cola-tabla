@@ -11,6 +11,7 @@ export {
   InvalidCardDescriptionError,
   InvalidCardTitleError,
 } from './application/errors'
+export { applyCardEvent, type CardEvent } from './application/apply-card-event'
 export { useCreateCard } from './application/use-create-card'
 export { useDeleteCard } from './application/use-delete-card'
 export { useMoveCard } from './application/use-move-card'

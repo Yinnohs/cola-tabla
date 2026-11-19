@@ -13,6 +13,11 @@ export interface NormalizedList extends Omit<BoardListView, 'cards'> {
  */
 export interface NormalizedBoard {
   readonly board: Board
+  /**
+   * `seq` del ultimo evento de tiempo real reflejado en esta cache (el de la carga o el ultimo aplicado).
+   * Lo usa `sequence-tracker` (realtime) para decidir APPLY / IGNORE_DUPLICATE / RESYNC.
+   */
+  readonly lastSeq: number
   readonly listIds: readonly ListId[]
   readonly lists: Readonly<Record<ListId, NormalizedList>>
   readonly cards: Readonly<Record<CardId, BoardCardView>>
@@ -32,7 +37,13 @@ export function normalizeBoard(details: BoardDetails): NormalizedBoard {
     void _omit
     lists[list.id] = { ...rest, cardIds: sortedCards.map((c) => c.id) }
   }
-  return { board: details.board, listIds: sortedLists.map((l) => l.id), lists, cards }
+  return {
+    board: details.board,
+    lastSeq: details.lastSeq,
+    listIds: sortedLists.map((l) => l.id),
+    lists,
+    cards,
+  }
 }
 
 /** Selector: listas ordenadas con sus tarjetas resueltas (para la UI). */
@@ -50,6 +61,10 @@ export function selectCardsOf(nb: NormalizedBoard, listId: ListId): BoardCardVie
 
 export function withBoard(nb: NormalizedBoard, board: Board): NormalizedBoard {
   return { ...nb, board }
+}
+
+export function withLastSeq(nb: NormalizedBoard, lastSeq: number): NormalizedBoard {
+  return nb.lastSeq === lastSeq ? nb : { ...nb, lastSeq }
 }
 
 /** Datos de una lista que la cache necesita (sin tarjetas). */
@@ -93,6 +108,22 @@ export function upsertCard(nb: NormalizedBoard, card: BoardCardView): Normalized
   const ids = current.cardIds.includes(card.id) ? current.cardIds : [...current.cardIds, card.id]
   lists[card.listId] = { ...current, cardIds: sortIds(ids, (id) => cards[id]?.position) }
   return { ...nb, cards, lists }
+}
+
+/**
+ * Reconcilia con una tarjeta recibida (respuesta REST o evento): si la cache ya tiene una version MAS NUEVA
+ * (p. ej. un evento remoto que llego antes que la respuesta de nuestra peticion) se conserva; si no, se aplica.
+ * Evita retroceder el estado por llegadas fuera de orden.
+ */
+export function reconcileCard(nb: NormalizedBoard, card: BoardCardView): NormalizedBoard {
+  const existing = nb.cards[card.id]
+  return existing && existing.version > card.version ? nb : upsertCard(nb, card)
+}
+
+/** Igual que `reconcileCard`, para listas. */
+export function reconcileList(nb: NormalizedBoard, list: ListEntity): NormalizedBoard {
+  const existing = nb.lists[list.id]
+  return existing && existing.version > list.version ? nb : upsertList(nb, list)
 }
 
 export function removeCard(nb: NormalizedBoard, id: CardId): NormalizedBoard {

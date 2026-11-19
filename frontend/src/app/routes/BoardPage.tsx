@@ -5,6 +5,7 @@ import { useWorkspace } from '../../features/workspaces'
 import { boardId, canEdit, type BoardId, type WorkspaceId } from '../../shared/kernel'
 import { isForbidden } from '../../shared/lib'
 import { AccessDenied } from '../../shared/ui'
+import { RealtimeProvider } from '../providers'
 
 /**
  * Compone boards (carga + cabecera) con cards/lists (cuerpo): boards no conoce a las demas features.
@@ -23,7 +24,12 @@ function BoardLoader({ id }: { id: BoardId }) {
     if (isForbidden(board.error)) return <AccessDenied />
     return <p role="alert">No se pudo cargar el tablero: {board.error.message}</p>
   }
-  return <BoardWithRole id={id} workspaceId={board.data.board.workspaceId} />
+  // El tiempo real se monta con el tablero ya en cache (la carga REST es la fuente de verdad).
+  return (
+    <RealtimeProvider boardId={id}>
+      <BoardWithRole id={id} workspaceId={board.data.board.workspaceId} />
+    </RealtimeProvider>
+  )
 }
 
 function BoardWithRole({ id, workspaceId }: { id: BoardId; workspaceId: WorkspaceId }) {

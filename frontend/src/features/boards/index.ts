@@ -6,13 +6,17 @@ export {
   removeCard,
   selectCardsOf,
   selectLists,
+  reconcileCard,
+  reconcileList,
   upsertCard,
   upsertList,
   withBoard,
+  withLastSeq,
   type ListEntity,
   type NormalizedBoard,
   type NormalizedList,
 } from './domain/normalized-board'
+export { applyBoardEvent, type BoardUpdatedEvent } from './domain/apply-board-event'
 export type { BoardRepository } from './application/ports/board-repository'
 export { boardKeys } from './application/query-keys'
 export { useBoards } from './application/use-boards'

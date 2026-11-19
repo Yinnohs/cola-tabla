@@ -358,6 +358,8 @@ export interface components {
             name?: string;
             /** Format: int64 */
             version?: number;
+            /** Format: int64 */
+            lastSeq?: number;
             lists?: components["schemas"]["BoardListResponse"][];
         };
         BoardListResponse: {
@@ -874,6 +876,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Eventos con seq > since, en orden, y el lastSeq actual */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardEventsResponse"];
+                };
+            };
             /** @description since negativo o mayor que el seq actual (code INVALID_SINCE) */
             400: {
                 headers: {

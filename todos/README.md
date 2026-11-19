@@ -21,7 +21,7 @@ Derivada de `initial-plan.md` e `implentacion-inicial-colatabla.md`. Una carpeta
 | 0 Base | [ ] [fase-0](back/fase-0-base.md) | [ ] [fase-0](front/fase-0-base.md) |
 | 1 Dominio y REST | [ ] [fase-1](back/fase-1-dominio-rest.md) | [ ] [fase-1](front/fase-1-dominio-rest.md) |
 | 2 Auth multi-tenant | [x] [fase-2](back/fase-2-auth-multitenant.md) | [x] [fase-2](front/fase-2-auth-multitenant.md) |
-| 3 Tiempo real | [ ] [fase-3](back/fase-3-tiempo-real.md) | [ ] [fase-3](front/fase-3-tiempo-real.md) |
+| 3 Tiempo real | [x] [fase-3](back/fase-3-tiempo-real.md) | [x] [fase-3](front/fase-3-tiempo-real.md) |
 | 4 Conflictos/reconexión | [ ] [fase-4](back/fase-4-conflictos-reconexion.md) | [ ] [fase-4](front/fase-4-conflictos-reconexion.md) |
 | 5 Presencia | [ ] [fase-5](back/fase-5-presencia.md) | [ ] [fase-5](front/fase-5-presencia.md) |
 | 6 Escalado | [ ] [fase-6](back/fase-6-escalado.md) | [ ] [fase-6](front/fase-6-escalado.md) |

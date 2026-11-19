@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   /** Origen de la API; vacio = mismo origen. */
   readonly VITE_API_BASE_URL?: string
+  /** Endpoint STOMP (ws:// o wss://); por defecto el mismo origen + /ws. */
+  readonly VITE_WS_URL?: string
   /** Emisor OIDC (realm de Keycloak). */
   readonly VITE_OIDC_AUTHORITY?: string
   /** Cliente publico de la SPA (PKCE). */

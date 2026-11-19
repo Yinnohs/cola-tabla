@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:8080',
-      // Endpoint STOMP: llega en Fase 3 (B3.1); hasta entonces el backend no lo expone.
+      // Endpoint STOMP (WebSocket nativo)
       '/ws': { target: 'http://localhost:8080', ws: true },
     },
   },

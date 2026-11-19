@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { usePorts } from '../../../app/di'
 import { StaleVersionError } from '../../../shared/lib'
 import type { BoardId, CardId } from '../../../shared/kernel'
-import { boardKeys, upsertCard, type NormalizedBoard } from '../../boards'
+import { boardKeys, reconcileCard, type NormalizedBoard } from '../../boards'
 import { cardDescription, cardTitle } from '../domain/card'
 import { CardConflictError, InvalidCardDescriptionError, InvalidCardTitleError } from './errors'
 
@@ -46,7 +46,9 @@ export function useUpdateCard(boardId: BoardId) {
       }
     },
     onSuccess: (card) => {
-      queryClient.setQueryData<NormalizedBoard>(key, (old) => (old ? upsertCard(old, card) : old))
+      queryClient.setQueryData<NormalizedBoard>(key, (old) =>
+        old ? reconcileCard(old, card) : old,
+      )
     },
   })
 }

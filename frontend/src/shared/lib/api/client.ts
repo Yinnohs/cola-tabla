@@ -1,5 +1,6 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { paths } from './schema'
+import { isClientId } from '../../kernel/client-id'
 import { toApiError } from './api-error'
 
 export type TokenProvider = () => string | null | undefined | Promise<string | null | undefined>
@@ -9,8 +10,15 @@ export interface ApiClientOptions {
   baseUrl?: string
   /** Punto de inyeccion del bearer token (Keycloak llegara en Fase 2). */
   getToken?: TokenProvider
+  /**
+   * Identificador de esta pestana: se envia como cabecera `X-Client-Id` en las peticiones de escritura para
+   * que el servidor lo devuelva en el evento y el cliente ignore su propio eco (board-events.md).
+   */
+  clientId?: string
   fetch?: (request: Request) => Promise<Response>
 }
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 export type ApiClient = ReturnType<typeof createClient<paths>>
 
@@ -29,6 +37,16 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     },
   }
   client.use(auth)
+  const { clientId } = options
+  if (isClientId(clientId)) {
+    const clientIdHeader: Middleware = {
+      onRequest({ request }) {
+        if (!SAFE_METHODS.has(request.method)) request.headers.set('X-Client-Id', clientId)
+        return request
+      },
+    }
+    client.use(clientIdHeader)
+  }
   return client
 }
 

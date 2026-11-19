@@ -24,6 +24,7 @@ const details = {
   workspaceId: W,
   name: 'Sprint',
   version: 3,
+  lastSeq: 17,
   lists: [
     {
       id: 'l-2',
@@ -50,6 +51,7 @@ describe('HttpBoardRepository', () => {
     server.use(http.get(`${TEST_API_URL}/api/boards/${B}`, () => HttpResponse.json(details)))
     const result = await repo.get(boardId(B))
     expect(result.board).toEqual({ id: B, workspaceId: W, name: 'Sprint', version: 3 })
+    expect(result.lastSeq).toBe(17)
     expect(result.lists).toHaveLength(2)
     const todo = result.lists.find((l) => l.name === 'Todo')
     expect(todo?.cards[0]).toEqual({
@@ -61,6 +63,13 @@ describe('HttpBoardRepository', () => {
       version: 2,
     })
     expect(todo?.cards[1]?.description).toBe('')
+  })
+
+  it('get sin lastSeq falla (respuesta malformada)', async () => {
+    const { lastSeq: _omit, ...legacy } = details
+    void _omit
+    server.use(http.get(`${TEST_API_URL}/api/boards/${B}`, () => HttpResponse.json(legacy)))
+    await expect(repo.get(boardId(B))).rejects.toThrow(/lastSeq/)
   })
 
   it('get con posicion invalida falla', async () => {
