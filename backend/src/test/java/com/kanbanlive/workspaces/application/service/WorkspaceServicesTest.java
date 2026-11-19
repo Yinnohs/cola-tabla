@@ -53,7 +53,8 @@ class WorkspaceServicesTest {
     final List<String> owners = new ArrayList<>();
     final CreateWorkspaceService create = new CreateWorkspaceService(repo, new SequentialIdGenerator(), clock,
             () -> "user-1", (workspaceId, userId) -> owners.add(workspaceId + ":" + userId));
-    final ListWorkspacesService list = new ListWorkspacesService(repo, () -> "user-1", userId -> java.util.Set.of());
+    final Map<UUID, String> roles = new java.util.HashMap<>();
+    final ListWorkspacesService list = new ListWorkspacesService(repo, () -> "user-1", userId -> roles);
     final ListWorkspacesService listAll = new ListWorkspacesService(repo, new com.kanbanlive.sharedkernel.application.CurrentUser() {
         @Override
         public String id() {
@@ -64,7 +65,7 @@ class WorkspaceServicesTest {
         public boolean unrestricted() {
             return true;
         }
-    }, userId -> java.util.Set.of());
+    }, userId -> java.util.Map.of());
     final CheckWorkspaceExistsService exists = new CheckWorkspaceExistsService(repo);
 
     @Test
@@ -80,6 +81,7 @@ class WorkspaceServicesTest {
     void creatorBecomesOwner() {
         WorkspaceView view = create.execute(new CreateWorkspaceCommand("Acme"));
         assertThat(owners).containsExactly(view.id() + ":user-1");
+        assertThat(view.role()).isEqualTo("OWNER");
     }
 
     @Test
@@ -99,6 +101,16 @@ class WorkspaceServicesTest {
     }
 
     @Test
+    void listReturnsOnlyMemberWorkspacesWithTheirRole() {
+        WorkspaceView a = create.execute(new CreateWorkspaceCommand("A"));
+        create.execute(new CreateWorkspaceCommand("B"));
+        roles.put(a.id(), "VIEWER");
+        assertThat(list.execute()).extracting(WorkspaceView::name, WorkspaceView::role)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("A", "VIEWER"));
+        assertThat(listAll.execute()).extracting(WorkspaceView::role).containsOnly("OWNER");
+    }
+
+    @Test
     void existsReflectsRepository() {
         WorkspaceView view = create.execute(new CreateWorkspaceCommand("A"));
         assertThat(exists.execute(view.id())).isTrue();
@@ -108,8 +120,10 @@ class WorkspaceServicesTest {
     @Test
     void getReturnsViewOrNotFound() {
         WorkspaceView view = create.execute(new CreateWorkspaceCommand("Acme"));
-        GetWorkspaceService get = new GetWorkspaceService(repo);
-        assertThat(get.execute(view.id())).isEqualTo(view);
+        roles.put(view.id(), "EDITOR");
+        GetWorkspaceService get = new GetWorkspaceService(repo, () -> "user-1", userId -> roles);
+        assertThat(get.execute(view.id())).isEqualTo(
+                new WorkspaceView(view.id(), view.name(), view.version(), view.createdAt(), "EDITOR"));
         assertThatThrownBy(() -> get.execute(UUID.randomUUID())).isInstanceOf(NotFoundException.class);
     }
 }

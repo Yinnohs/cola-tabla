@@ -8,7 +8,7 @@ final class WorkspaceViews {
     private WorkspaceViews() {
     }
 
-    static WorkspaceView of(Workspace w) {
-        return new WorkspaceView(w.id(), w.name(), w.version(), w.createdAt());
+    static WorkspaceView of(Workspace w, String role) {
+        return new WorkspaceView(w.id(), w.name(), w.version(), w.createdAt(), role);
     }
 }

@@ -64,7 +64,7 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [{ "type": "password", "value": "owner", "temporary": false }],
-      "realmRoles": ["owner"]
+      "realmRoles": ["owner", "offline_access"]
     },
     {
       "id": "00000000-0000-0000-0000-00000000a002",
@@ -75,7 +75,7 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [{ "type": "password", "value": "editor", "temporary": false }],
-      "realmRoles": ["editor"]
+      "realmRoles": ["editor", "offline_access"]
     },
     {
       "id": "00000000-0000-0000-0000-00000000a003",
@@ -86,7 +86,7 @@
       "enabled": true,
       "emailVerified": true,
       "credentials": [{ "type": "password", "value": "viewer", "temporary": false }],
-      "realmRoles": ["viewer"]
+      "realmRoles": ["viewer", "offline_access"]
     }
   ]
 }

@@ -47,4 +47,20 @@ class MembershipPersistenceAdapterIT extends PostgresIT {
         assertThat(adapter.findByWorkspaceAndUser(ws, "u1").orElseThrow().role()).isEqualTo(Role.VIEWER);
         assertThat(adapter.countByWorkspaceAndRole(ws, Role.OWNER)).isZero();
     }
+
+    @Test
+    void listsByWorkspaceAndUserAndDeletes() {
+        UUID ws = workspace();
+        UUID other = workspace();
+        adapter.save(Membership.create(UUID.randomUUID(), ws, "b", Role.VIEWER, NOW));
+        adapter.save(Membership.create(UUID.randomUUID(), ws, "a", Role.OWNER, NOW));
+        Membership foreign = adapter.save(Membership.create(UUID.randomUUID(), other, "a", Role.EDITOR, NOW));
+
+        assertThat(adapter.findByWorkspace(ws)).extracting(Membership::userId).containsExactly("a", "b");
+        assertThat(adapter.findByUser("a")).extracting(Membership::workspaceId).containsExactlyInAnyOrder(ws, other);
+
+        adapter.delete(foreign);
+        assertThat(adapter.findByWorkspaceAndUser(other, "a")).isEmpty();
+        assertThat(adapter.findByWorkspace(ws)).hasSize(2);
+    }
 }

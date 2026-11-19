@@ -6,7 +6,7 @@ import com.kanbanlive.workspaces.application.port.in.WorkspaceView;
 import com.kanbanlive.workspaces.application.port.out.WorkspaceAccess;
 import com.kanbanlive.workspaces.application.port.out.WorkspaceRepository;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,14 +25,14 @@ public class ListWorkspacesService implements ListWorkspacesUseCase {
         this.access = access;
     }
 
-    /** Solo los workspaces donde el usuario actual es miembro (todos si la seguridad esta desactivada en local). */
+    /** Solo los workspaces donde el usuario actual es miembro con su rol (todos como OWNER si la seguridad esta desactivada en local). */
     @Override
     public List<WorkspaceView> execute() {
         if (currentUser.unrestricted()) {
-            return repository.findAll().stream().map(WorkspaceViews::of).toList();
+            return repository.findAll().stream().map(w -> WorkspaceViews.of(w, "OWNER")).toList();
         }
-        Set<UUID> visible = access.workspaceIdsOf(currentUser.id());
-        return repository.findAll().stream().filter(w -> visible.contains(w.id())).map(WorkspaceViews::of)
-                .toList();
+        Map<UUID, String> roles = access.rolesOf(currentUser.id());
+        return repository.findAll().stream().filter(w -> roles.containsKey(w.id()))
+                .map(w -> WorkspaceViews.of(w, roles.get(w.id()))).toList();
     }
 }

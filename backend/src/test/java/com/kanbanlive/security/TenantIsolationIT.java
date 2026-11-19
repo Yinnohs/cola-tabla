@@ -92,6 +92,10 @@ class TenantIsolationIT extends SecuredApiIT {
                 Arguments.of(Named.of("POST invite member", ep(HttpMethod.POST,
                         x -> "/api/workspaces/" + x.wsA + "/members",
                         x -> "{\"userId\":\"" + x.userB + "\",\"role\":\"OWNER\"}"))),
+                Arguments.of(Named.of("GET members",
+                        ep(HttpMethod.GET, x -> "/api/workspaces/" + x.wsA + "/members", null))),
+                Arguments.of(Named.of("DELETE member", ep(HttpMethod.DELETE,
+                        x -> "/api/workspaces/" + x.wsA + "/members/" + x.userA, null))),
                 Arguments.of(Named.of("PATCH member role", ep(HttpMethod.PATCH,
                         x -> "/api/workspaces/" + x.wsA + "/members/" + x.userA, x -> "{\"role\":\"VIEWER\"}"))));
     }

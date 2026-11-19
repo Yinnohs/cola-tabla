@@ -58,7 +58,7 @@ class WorkspaceControllerTest {
     GetWorkspaceUseCase getWorkspace;
 
     final UUID id = UUID.randomUUID();
-    final WorkspaceView view = new WorkspaceView(id, "Acme", 0, Instant.parse("2026-01-01T00:00:00Z"));
+    final WorkspaceView view = new WorkspaceView(id, "Acme", 0, Instant.parse("2026-01-01T00:00:00Z"), "EDITOR");
 
     @Test
     void postCreatesAndReturns201WithLocation() throws Exception {
@@ -70,7 +70,8 @@ class WorkspaceControllerTest {
                 .andExpect(header().string("Location", "/api/workspaces/" + id))
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.name").value("Acme"))
-                .andExpect(jsonPath("$.version").value(0));
+                .andExpect(jsonPath("$.version").value(0))
+                .andExpect(jsonPath("$.role").value("EDITOR"));
     }
 
     @Test

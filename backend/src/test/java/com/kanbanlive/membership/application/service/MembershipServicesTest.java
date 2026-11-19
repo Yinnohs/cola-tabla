@@ -50,6 +50,22 @@ class MembershipServicesTest {
         }
 
         @Override
+        public java.util.List<Membership> findByWorkspace(UUID workspaceId) {
+            return store.values().stream().filter(m -> m.workspaceId().equals(workspaceId))
+                    .sorted(java.util.Comparator.comparing(Membership::userId)).toList();
+        }
+
+        @Override
+        public java.util.List<Membership> findByUser(String userId) {
+            return store.values().stream().filter(m -> m.userId().equals(userId)).toList();
+        }
+
+        @Override
+        public void delete(Membership m) {
+            store.remove(key(m.workspaceId(), m.userId()));
+        }
+
+        @Override
         public long countByWorkspaceAndRole(UUID workspaceId, Role role) {
             return store.values().stream()
                     .filter(m -> m.workspaceId().equals(workspaceId) && m.role() == role).count();
@@ -109,8 +125,34 @@ class MembershipServicesTest {
         UUID other = UUID.randomUUID();
         assign.execute(ws, "u1");
         invite.execute(new InviteMemberCommand(other, "u2", "VIEWER"));
-        assertThat(new ListUserWorkspacesService(repo).execute("u1")).containsExactly(ws);
-        assertThat(new ListUserWorkspacesService(repo).execute("nobody")).isEmpty();
+        assertThat(new GetUserRolesService(repo).execute("u1")).containsExactlyEntriesOf(Map.of(ws, "OWNER"));
+        assertThat(new GetUserRolesService(repo).execute("u2")).containsExactlyEntriesOf(Map.of(other, "VIEWER"));
+        assertThat(new GetUserRolesService(repo).execute("nobody")).isEmpty();
+    }
+
+    @Test
+    void listsMembersOfOneWorkspaceOnly() {
+        UUID other = UUID.randomUUID();
+        assign.execute(ws, "u1");
+        invite.execute(new InviteMemberCommand(ws, "u2", "VIEWER"));
+        invite.execute(new InviteMemberCommand(other, "u3", "EDITOR"));
+        assertThat(new ListMembersService(repo).execute(ws)).extracting(v -> v.userId()).containsExactly("u1", "u2");
+    }
+
+    @Test
+    void removeDeletesMemberAndProtectsLastOwner() {
+        RemoveMemberService remove = new RemoveMemberService(repo);
+        assign.execute(ws, "u1");
+        invite.execute(new InviteMemberCommand(ws, "u2", "VIEWER"));
+
+        remove.execute(ws, "u2");
+        assertThat(repo.findByWorkspaceAndUser(ws, "u2")).isEmpty();
+        assertThatThrownBy(() -> remove.execute(ws, "u2")).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> remove.execute(ws, "u1")).isInstanceOf(LastOwnerException.class);
+
+        invite.execute(new InviteMemberCommand(ws, "u3", "OWNER"));
+        remove.execute(ws, "u1");
+        assertThat(repo.findByWorkspaceAndUser(ws, "u1")).isEmpty();
     }
 
     @Test

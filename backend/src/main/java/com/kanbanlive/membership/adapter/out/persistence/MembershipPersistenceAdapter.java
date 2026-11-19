@@ -4,6 +4,7 @@ import com.kanbanlive.membership.application.port.out.MembershipRepository;
 import com.kanbanlive.membership.domain.model.Membership;
 import com.kanbanlive.membership.domain.model.Role;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -50,5 +51,22 @@ class MembershipPersistenceAdapter implements MembershipRepository {
     @Override
     public long countByWorkspaceAndRole(UUID workspaceId, Role role) {
         return jpa.countByWorkspaceIdAndRole(workspaceId, role);
+    }
+
+    @Override
+    public List<Membership> findByWorkspace(UUID workspaceId) {
+        return jpa.findByWorkspaceIdOrderByCreatedAtAscUserIdAsc(workspaceId).stream().map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Membership> findByUser(String userId) {
+        return jpa.findByUserId(userId).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public void delete(Membership membership) {
+        jpa.deleteById(membership.id());
+        jpa.flush();
     }
 }

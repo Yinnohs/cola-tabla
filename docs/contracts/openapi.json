@@ -59,6 +59,35 @@
       }
     },
     "/api/workspaces/{workspaceId}/members" : {
+      "get" : {
+        "tags" : [ "Membership" ],
+        "summary" : "Listar los miembros del workspace (solo OWNER)",
+        "operationId" : "listMembers",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/MemberResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "post" : {
         "tags" : [ "Membership" ],
         "summary" : "Invitar a un usuario al workspace (solo OWNER)",
@@ -366,6 +395,32 @@
       }
     },
     "/api/workspaces/{workspaceId}/members/{userId}" : {
+      "delete" : {
+        "tags" : [ "Membership" ],
+        "summary" : "Quitar a un miembro del workspace (solo OWNER)",
+        "operationId" : "removeMember",
+        "parameters" : [ {
+          "name" : "workspaceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      },
       "patch" : {
         "tags" : [ "Membership" ],
         "summary" : "Cambiar el rol de un miembro (solo OWNER)",
@@ -714,6 +769,9 @@
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "role" : {
+            "type" : "string"
           }
         }
       },

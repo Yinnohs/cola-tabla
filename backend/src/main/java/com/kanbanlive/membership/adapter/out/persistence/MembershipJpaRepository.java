@@ -1,6 +1,7 @@
 package com.kanbanlive.membership.adapter.out.persistence;
 
 import com.kanbanlive.membership.domain.model.Role;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -14,6 +15,10 @@ interface MembershipJpaRepository extends JpaRepository<MembershipJpaEntity, UUI
 
     @Query("select m.workspaceId from MembershipJpaEntity m where m.userId = :userId")
     Set<UUID> findWorkspaceIdsByUserId(@Param("userId") String userId);
+
+    List<MembershipJpaEntity> findByWorkspaceIdOrderByCreatedAtAscUserIdAsc(UUID workspaceId);
+
+    List<MembershipJpaEntity> findByUserId(String userId);
 
     long countByWorkspaceIdAndRole(UUID workspaceId, Role role);
 }

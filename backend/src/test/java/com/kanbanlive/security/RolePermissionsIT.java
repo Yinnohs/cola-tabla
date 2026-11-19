@@ -106,6 +106,37 @@ class RolePermissionsIT extends SecuredApiIT {
     }
 
     @Test
+    void ownerListsMembersAndOthersCannot() throws Exception {
+        mvc.perform(get("/api/workspaces/{id}/members", ws).with(as(owner))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[?(@.userId=='" + editor + "')].role").value("EDITOR"));
+        mvc.perform(get("/api/workspaces/{id}/members", ws).with(as(editor))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/workspaces/{id}/members", ws).with(as(viewer))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void ownerRemovesMembersButNotTheLastOwner() throws Exception {
+        mvc.perform(delete("/api/workspaces/{id}/members/{u}", ws, viewer).with(as(editor)))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/workspaces/{id}/members/{u}", ws, viewer).with(as(owner)))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/workspaces/{id}", ws).with(as(viewer))).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/workspaces/{id}/members/{u}", ws, viewer).with(as(owner)))
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/workspaces/{id}/members/{u}", ws, owner).with(as(owner)))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAST_OWNER"));
+    }
+
+    @Test
+    void workspaceExposesTheRoleOfTheCurrentUser() throws Exception {
+        mvc.perform(get("/api/workspaces/{id}", ws).with(as(owner))).andExpect(jsonPath("$.role").value("OWNER"));
+        mvc.perform(get("/api/workspaces/{id}", ws).with(as(editor))).andExpect(jsonPath("$.role").value("EDITOR"));
+        mvc.perform(get("/api/workspaces/{id}", ws).with(as(viewer))).andExpect(jsonPath("$.role").value("VIEWER"));
+        mvc.perform(get("/api/workspaces").with(as(viewer))).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].role").value("VIEWER"));
+    }
+
+    @Test
     void workspaceCreatorIsOwner() throws Exception {
         mvc.perform(post("/api/workspaces/{id}/members", ws).with(as(owner)).contentType(MediaType.APPLICATION_JSON)
                 .content(json("{\"userId\":\"z\",\"role\":\"VIEWER\"}"))).andExpect(status().isCreated());

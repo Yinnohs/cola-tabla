@@ -1,8 +1,8 @@
 package com.kanbanlive.workspaces.adapter.out.membership;
 
-import com.kanbanlive.membership.application.port.in.ListUserWorkspacesUseCase;
+import com.kanbanlive.membership.application.port.in.GetUserRolesUseCase;
 import com.kanbanlive.workspaces.application.port.out.WorkspaceAccess;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -10,14 +10,14 @@ import org.springframework.stereotype.Component;
 @Component
 class WorkspaceAccessAdapter implements WorkspaceAccess {
 
-    private final ListUserWorkspacesUseCase listUserWorkspaces;
+    private final GetUserRolesUseCase getUserRoles;
 
-    WorkspaceAccessAdapter(ListUserWorkspacesUseCase listUserWorkspaces) {
-        this.listUserWorkspaces = listUserWorkspaces;
+    WorkspaceAccessAdapter(GetUserRolesUseCase getUserRoles) {
+        this.getUserRoles = getUserRoles;
     }
 
     @Override
-    public Set<UUID> workspaceIdsOf(String userId) {
-        return listUserWorkspaces.execute(userId);
+    public Map<UUID, String> rolesOf(String userId) {
+        return getUserRoles.execute(userId);
     }
 }

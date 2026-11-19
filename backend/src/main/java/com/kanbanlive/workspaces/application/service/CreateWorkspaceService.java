@@ -35,6 +35,6 @@ public class CreateWorkspaceService implements CreateWorkspaceUseCase {
         Workspace workspace = Workspace.create(ids.newId(), command.name(), clock.now());
         Workspace saved = repository.save(workspace);
         ownership.assignOwner(saved.id(), currentUser.id());
-        return WorkspaceViews.of(saved);
+        return WorkspaceViews.of(saved, "OWNER");
     }
 }
