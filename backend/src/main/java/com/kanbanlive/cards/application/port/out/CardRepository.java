@@ -12,6 +12,12 @@ public interface CardRepository {
 
     Card save(Card card);
 
+    /**
+     * Persiste un movimiento (lista + posicion) con last-write-wins: UPDATE directo de una fila SIN comprobar la
+     * version cargada y con version+1 (ADR-0005). Nunca lanza StaleVersionException por concurrencia.
+     */
+    Card saveMove(Card card);
+
     Optional<Card> findById(UUID id);
 
     /** Borrado fisico. */

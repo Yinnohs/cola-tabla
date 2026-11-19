@@ -1,12 +1,15 @@
 package com.kanbanlive.platform.messaging;
 
 import com.kanbanlive.platform.security.Perms;
-import java.time.Instant;
+import java.time.Clock;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.security.messaging.context.SecurityContextChannelInterceptor;
@@ -65,18 +68,15 @@ class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         lifecycle.disconnected(event.getSessionId());
     }
 
-    /** Por defecto no hace nada; ver {@link SocketTokenLifecycle}. */
+    /**
+     * Cierra la sesion cuando vence el JWT (B4.5, ADR-0006). El canal de salida se inyecta perezoso: lo crea la
+     * propia infraestructura STOMP que depende de esta configuracion. Un bean propio de {@link SocketTokenLifecycle}
+     * lo sustituye.
+     */
     @Bean
     @ConditionalOnMissingBean(SocketTokenLifecycle.class)
-    static SocketTokenLifecycle noopSocketTokenLifecycle() {
-        return new SocketTokenLifecycle() {
-            @Override
-            public void connected(String sessionId, String userId, Instant tokenExpiry) {
-            }
-
-            @Override
-            public void disconnected(String sessionId) {
-            }
-        };
+    static SocketTokenLifecycle expiringSocketTokenLifecycle(
+            @Lazy @Qualifier("clientOutboundChannel") MessageChannel clientOutboundChannel) {
+        return new ExpiringSocketTokenLifecycle(clientOutboundChannel, Clock.systemUTC());
     }
 }

@@ -45,6 +45,16 @@ class ListServicesTest {
             return saved;
         }
 
+        /** Last-write-wins: ignora la version del argumento y siempre incrementa la almacenada. */
+        @Override
+        public BoardList saveMove(BoardList l) {
+            BoardList current = store.get(l.id());
+            BoardList saved = BoardList.rehydrate(l.id(), current.boardId(), current.name(), l.position(),
+                    current.version() + 1, current.createdAt(), l.updatedAt());
+            store.put(l.id(), saved);
+            return saved;
+        }
+
         @Override
         public Optional<BoardList> findById(UUID id) {
             return Optional.ofNullable(store.get(id));
@@ -160,7 +170,11 @@ class ListServicesTest {
     void renameWithStaleVersionConflicts() {
         ListSummary a = newList("A");
         assertThatThrownBy(() -> rename.execute(new RenameListCommand(a.id(), "AA", a.version() + 3)))
-                .isInstanceOf(StaleVersionException.class);
+                .isInstanceOfSatisfying(StaleVersionException.class, ex -> {
+                    assertThat(ex.current()).isInstanceOf(ListSummary.class);
+                    assertThat(((ListSummary) ex.current()).name()).isEqualTo("A");
+                    assertThat(((ListSummary) ex.current()).version()).isEqualTo(a.version());
+                });
         assertThat(repo.store.get(a.id()).name()).isEqualTo("A");
     }
 

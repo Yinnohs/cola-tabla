@@ -31,7 +31,7 @@ public class RenameBoardService implements RenameBoardUseCase {
                 .orElseThrow(() -> new NotFoundException("board " + command.boardId() + " not found"));
         if (board.version() != command.expectedVersion()) {
             throw new StaleVersionException("board " + board.id() + " is at version " + board.version()
-                    + ", expected " + command.expectedVersion());
+                    + ", expected " + command.expectedVersion(), BoardSummaries.of(board));
         }
         BoardSummary saved = BoardSummaries.of(boards.save(board.rename(command.name(), clock.now())));
         publisher.publish(saved.id(), "board.updated", java.util.Map.of("board", saved));

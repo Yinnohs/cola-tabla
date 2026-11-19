@@ -2,6 +2,7 @@ package com.kanbanlive.platform.messaging;
 
 import com.kanbanlive.platform.security.Perms;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
@@ -86,8 +87,19 @@ class StompAuthChannelInterceptor implements ChannelInterceptor {
         lifecycle.connected(accessor.getSessionId(), jwt.getSubject(), jwt.getExpiresAt());
     }
 
+    /** Comprobacion barata (B4.5): un token vencido no autoriza mas frames aunque el cierre aun no haya ocurrido. */
+    private void requireUnexpired(StompHeaderAccessor accessor) {
+        if (accessor.getUser() instanceof JwtAuthenticationToken auth) {
+            Instant expiresAt = auth.getToken().getExpiresAt();
+            if (expiresAt != null && !expiresAt.isAfter(Instant.now())) {
+                throw new MessagingException(ExpiringSocketTokenLifecycle.EXPIRED_MESSAGE);
+            }
+        }
+    }
+
     private void subscribe(StompHeaderAccessor accessor) {
         String userId = userId(accessor).orElseThrow(() -> new MessagingException("Not authenticated"));
+        requireUnexpired(accessor);
         String destination = accessor.getDestination();
         Matcher m = destination == null ? null : BOARD_TOPIC.matcher(destination);
         if (m == null || !m.matches()) {
@@ -107,6 +119,7 @@ class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private void send(StompHeaderAccessor accessor) {
         userId(accessor).orElseThrow(() -> new MessagingException("Not authenticated"));
+        requireUnexpired(accessor);
         String destination = accessor.getDestination();
         if (destination == null || !destination.startsWith("/app/")) {
             throw new MessagingException("Destination not allowed");

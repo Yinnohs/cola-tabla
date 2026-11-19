@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.kanbanlive.collaboration.domain.error.EventsGoneException;
+import com.kanbanlive.collaboration.domain.error.InvalidEventCursorException;
 import com.kanbanlive.sharedkernel.domain.ConflictException;
 import com.kanbanlive.sharedkernel.domain.ForbiddenException;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
@@ -57,6 +59,36 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void staleVersionCarriesTheCurrentStateInTheBody() throws Exception {
+        mvc.perform(get("/t/stale-current"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("STALE_VERSION"))
+                .andExpect(jsonPath("$.current.id").value("c1"))
+                .andExpect(jsonPath("$.current.version").value(3));
+    }
+
+    @Test
+    void staleVersionWithoutStateHasNoCurrentProperty() throws Exception {
+        mvc.perform(get("/t/stale"))
+                .andExpect(jsonPath("$.current").doesNotExist());
+    }
+
+    @Test
+    void badRequestDomainErrorIs400WithItsOwnCode() throws Exception {
+        mvc.perform(get("/t/bad-request"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_SINCE"));
+    }
+
+    @Test
+    void goneDomainErrorIs410WithItsOwnCode() throws Exception {
+        mvc.perform(get("/t/gone"))
+                .andExpect(status().isGone())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("EVENTS_GONE"));
+    }
+
+    @Test
     void genericConflictIs409() throws Exception {
         mvc.perform(get("/t/conflict"))
                 .andExpect(status().isConflict())
@@ -103,6 +135,9 @@ class GlobalExceptionHandlerTest {
     record Body(@NotBlank String name) {
     }
 
+    record Current(String id, long version) {
+    }
+
     @RestController
     static class ThrowingController {
 
@@ -114,6 +149,21 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/t/stale")
         void stale() {
             throw new StaleVersionException("stale");
+        }
+
+        @GetMapping("/t/stale-current")
+        void staleWithCurrent() {
+            throw new StaleVersionException("stale", new Current("c1", 3));
+        }
+
+        @GetMapping("/t/bad-request")
+        void badRequest() {
+            throw new InvalidEventCursorException("since ahead");
+        }
+
+        @GetMapping("/t/gone")
+        void gone() {
+            throw new EventsGoneException("reload");
         }
 
         @GetMapping("/t/conflict")

@@ -33,7 +33,7 @@ public class UpdateCardService implements UpdateCardUseCase {
                 .orElseThrow(() -> new NotFoundException("card " + command.cardId() + " not found"));
         if (card.version() != command.expectedVersion()) {
             throw new StaleVersionException("card " + card.id() + " is at version " + card.version()
-                    + ", expected " + command.expectedVersion());
+                    + ", expected " + command.expectedVersion(), CardSummaries.of(card));
         }
         CardSummary saved = CardSummaries.of(cards.save(card.update(command.title(), command.description(), clock.now())));
         events.updated(saved);

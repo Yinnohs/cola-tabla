@@ -118,6 +118,11 @@ public final class StompTestClient implements AutoCloseable {
         });
     }
 
+    /** true mientras el socket STOMP sigue abierto (false tras un cierre del servidor). */
+    public boolean isConnected() {
+        return session != null && session.isConnected();
+    }
+
     public void send(String destination, String body) {
         session.send(destination, body);
     }

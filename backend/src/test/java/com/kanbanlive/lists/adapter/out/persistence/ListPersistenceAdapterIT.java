@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.kanbanlive.lists.domain.model.BoardList;
+import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import com.kanbanlive.sharedkernel.position.FractionalIndex;
 import com.kanbanlive.testsupport.PostgresIT;
@@ -91,6 +92,24 @@ class ListPersistenceAdapterIT extends PostgresIT {
         adapter.save(v0.rename("B", NOW));
 
         assertThatThrownBy(() -> adapter.save(v0.rename("C", NOW))).isInstanceOf(StaleVersionException.class);
+    }
+
+    @Test
+    void moveIsLastWriteWinsEvenWithAStaleLoadedVersion() {
+        BoardList v0 = newList("A", "V");
+        adapter.save(v0.rename("B", NOW)); // version 1; v0 ya es obsoleta
+
+        BoardList moved = adapter.saveMove(v0.moveTo(FractionalIndex.of("k"), NOW.plusSeconds(5)));
+
+        assertThat(moved.version()).isEqualTo(2);
+        assertThat(moved.position().value()).isEqualTo("k");
+        assertThat(moved.name()).isEqualTo("B");
+    }
+
+    @Test
+    void movingAMissingListIsNotFound() {
+        BoardList ghost = BoardList.create(UUID.randomUUID(), boardId, "G", FractionalIndex.of("V"), NOW);
+        assertThatThrownBy(() -> adapter.saveMove(ghost)).isInstanceOf(NotFoundException.class);
     }
 
     @Test

@@ -636,6 +636,52 @@
           }
         }
       }
+    },
+    "/api/boards/{boardId}/events" : {
+      "get" : {
+        "tags" : [ "Collaboration" ],
+        "summary" : "Eventos del tablero con seq > since (resync tras una desconexion)",
+        "operationId" : "getBoardEvents",
+        "parameters" : [ {
+          "name" : "boardId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "since",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "since negativo o mayor que el seq actual (code INVALID_SINCE)",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardEventsResponse"
+                }
+              }
+            }
+          },
+          "410" : {
+            "description" : "Demasiado atrasado o log purgado: recargar el tablero (code EVENTS_GONE)",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardEventsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -988,6 +1034,57 @@
             "items" : {
               "$ref" : "#/components/schemas/BoardCardResponse"
             }
+          }
+        }
+      },
+      "BoardEventsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "boardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "since" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "lastSeq" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "events" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Event"
+            }
+          }
+        }
+      },
+      "Event" : {
+        "type" : "object",
+        "properties" : {
+          "boardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "seq" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "payload" : { },
+          "clientId" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "schemaVersion" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       }

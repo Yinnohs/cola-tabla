@@ -46,6 +46,16 @@ class CardServicesTest {
             return saved;
         }
 
+        /** Last-write-wins: ignora la version del argumento y siempre incrementa la almacenada. */
+        @Override
+        public Card saveMove(Card c) {
+            Card current = store.get(c.id());
+            Card saved = Card.rehydrate(c.id(), c.listId(), current.title(), current.description(), c.position(),
+                    current.version() + 1, current.createdAt(), c.updatedAt());
+            store.put(c.id(), saved);
+            return saved;
+        }
+
         @Override
         public Optional<Card> findById(UUID id) {
             return Optional.ofNullable(store.get(id));
@@ -178,7 +188,12 @@ class CardServicesTest {
     void updateWithStaleVersionConflicts() {
         CardSummary a = newCard(list, "A");
         assertThatThrownBy(() -> update.execute(new UpdateCardCommand(a.id(), "AA", null, a.version() + 1)))
-                .isInstanceOf(StaleVersionException.class);
+                .isInstanceOfSatisfying(StaleVersionException.class, ex -> {
+                    // B4.4: el 409 transporta el estado actual para que el cliente compare.
+                    assertThat(ex.current()).isInstanceOf(CardSummary.class);
+                    assertThat(((CardSummary) ex.current()).title()).isEqualTo("A");
+                    assertThat(((CardSummary) ex.current()).version()).isEqualTo(a.version());
+                });
         assertThat(repo.store.get(a.id()).title()).isEqualTo("A");
     }
 

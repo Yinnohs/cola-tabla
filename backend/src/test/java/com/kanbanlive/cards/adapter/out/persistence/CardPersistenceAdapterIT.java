@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.kanbanlive.cards.domain.model.Card;
+import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import com.kanbanlive.sharedkernel.position.FractionalIndex;
 import com.kanbanlive.testsupport.PostgresIT;
@@ -80,6 +81,26 @@ class CardPersistenceAdapterIT extends PostgresIT {
         adapter.save(v0.update("B", null, NOW));
 
         assertThatThrownBy(() -> adapter.save(v0.update("C", null, NOW))).isInstanceOf(StaleVersionException.class);
+    }
+
+    @Test
+    void moveIsLastWriteWinsEvenWithAStaleLoadedVersion() {
+        Card v0 = newCard("A", "V");
+        adapter.save(v0.update("B", null, NOW)); // alguien edita: version 1; v0 (version 0) ya es obsoleta
+
+        Card moved = adapter.saveMove(v0.moveTo(otherListId, FractionalIndex.of("k"), NOW.plusSeconds(5)));
+
+        assertThat(moved.version()).isEqualTo(2); // bumpea sobre la version real, sin 409
+        assertThat(moved.listId()).isEqualTo(otherListId);
+        assertThat(moved.position().value()).isEqualTo("k");
+        assertThat(moved.title()).isEqualTo("B"); // la edicion concurrente no se pierde: solo se escribe lista+posicion
+        assertThat(moved.updatedAt()).isEqualTo(NOW.plusSeconds(5));
+    }
+
+    @Test
+    void movingAMissingCardIsNotFound() {
+        Card ghost = Card.create(UUID.randomUUID(), listId, "G", null, FractionalIndex.of("V"), NOW);
+        assertThatThrownBy(() -> adapter.saveMove(ghost)).isInstanceOf(NotFoundException.class);
     }
 
     @Test

@@ -33,3 +33,17 @@ management:
     health:
       probes:
         enabled: true
+
+kanban:
+  scheduling:
+    enabled: true
+  events:
+    # B4.2: si faltan mas de max-gap eventos al reconectar => 410 EVENTS_GONE (recargar el tablero).
+    max-gap: 500
+    # B4.3: retencion del log board_event y purga periodica en lotes acotados (ADR-0005).
+    retention: PT24H
+    purge:
+      interval: PT1H
+      initial-delay: PT1M
+      batch-size: 1000
+      max-batches: 100

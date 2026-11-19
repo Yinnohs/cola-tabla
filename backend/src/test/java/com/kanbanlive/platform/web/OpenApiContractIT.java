@@ -49,6 +49,7 @@ class OpenApiContractIT extends PostgresIT {
                 "/api/workspaces/{workspaceId}/boards",
                 "/api/boards/{boardId}",
                 "/api/boards/{boardId}/lists",
+                "/api/boards/{boardId}/events",
                 "/api/lists/{listId}",
                 "/api/lists/{listId}/move",
                 "/api/lists/{listId}/cards",

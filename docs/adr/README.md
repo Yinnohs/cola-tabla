@@ -18,8 +18,8 @@ Decisiones de arquitectura de Kanban Live. Una decisión = un fichero `NNNN-titu
 | [0003](0003-fractional-indexing-y-rebalanceo.md) | Fractional indexing (LexoRank-like) y rebalanceo | 1 | Aceptado |
 | [0004](0004-sin-use-effect.md) | Sin `useEffect` en el frontend | 1 | Aceptado |
 | [0008](0008-secuencia-por-tablero-y-log-de-eventos.md) | Secuencia por tablero asignada en la transacción + log `board_event` | 3 | Aceptado |
-| 0005 | Estrategia de conflictos (LWW para mover, 409 para editar) | 4 | Pendiente |
-| 0006 | Renovación de JWT en WebSocket | 4 | Pendiente |
+| [0005](0005-estrategia-de-conflictos.md) | Estrategia de conflictos (LWW para mover, 409 para editar) y retención del log | 4 | Aceptado |
+| [0006](0006-renovacion-de-jwt-en-websocket.md) | Renovación/expiración de JWT en WebSocket | 4 | Aceptado |
 | 0007 | Redis pub/sub vs RabbitMQ broker relay | 6 | Pendiente |
 
 Ver también: [`../../todos/`](../../todos/README.md) para las tareas que producen cada ADR.

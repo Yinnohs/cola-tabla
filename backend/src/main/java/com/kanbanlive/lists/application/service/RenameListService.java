@@ -31,7 +31,7 @@ public class RenameListService implements RenameListUseCase {
                 .orElseThrow(() -> new NotFoundException("list " + command.listId() + " not found"));
         if (list.version() != command.expectedVersion()) {
             throw new StaleVersionException("list " + list.id() + " is at version " + list.version()
-                    + ", expected " + command.expectedVersion());
+                    + ", expected " + command.expectedVersion(), ListSummaries.of(list));
         }
         ListSummary saved = ListSummaries.of(lists.save(list.rename(command.name(), clock.now())));
         publisher.publish(saved.boardId(), "list.updated", java.util.Map.of("list", saved));

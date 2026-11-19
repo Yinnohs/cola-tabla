@@ -90,6 +90,19 @@ Cada mensaje del topic es un JSON:
   - `seq > lastSeq + 1`: hay un hueco, recargar el tablero completo (`GET /api/boards/{boardId}`) y reanudar.
 - Si la difusión falla tras el commit, el cambio persiste y el hueco se detecta por `seq`.
 
+## Resincronización por `since` (Fase 4, ADR-0005)
+
+- `GET /api/boards/{boardId}/events?since={seq}` (permiso `canView`) devuelve
+  `{ boardId, since, lastSeq, events: [...] }`; cada evento tiene la forma del envelope del WebSocket, salvo que
+  `clientId` es siempre `null` (no se persiste). Los eventos van en orden de `seq`; el cliente continúa desde `lastSeq`.
+- `since == lastSeq` ⇒ `events` vacío. `since` negativo o mayor que el `seq` actual ⇒ `400` (`code = INVALID_SINCE`).
+- `410 Gone` (`code = EVENTS_GONE`) si faltan más de `kanban.events.max-gap` eventos (500) o el log fue purgado
+  (retención `kanban.events.retention`, 24 h): recargar el tablero completo (`GET /api/boards/{boardId}`).
+- Conflictos: editar con `version` obsoleta ⇒ `409` `STALE_VERSION` con la propiedad `current` (estado actual del
+  recurso); mover es last-write-wins y nunca devuelve `409`.
+- Token vencido: el servidor envía un frame STOMP `ERROR` (`Token expired`) y cierra el socket; el cliente renueva
+  ~60 s antes y reconecta (ADR-0006).
+
 ## `clientId` y eco propio
 
 - El cliente genera un identificador por instancia (pestaña/app), `[A-Za-z0-9._:-]{1,64}`, y lo envía en la

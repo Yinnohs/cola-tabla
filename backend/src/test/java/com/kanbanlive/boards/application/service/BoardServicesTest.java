@@ -116,7 +116,11 @@ class BoardServicesTest {
     void renameWithStaleVersionConflicts() {
         BoardSummary created = create.execute(new CreateBoardCommand(ws, "Old"));
         assertThatThrownBy(() -> rename.execute(new RenameBoardCommand(created.id(), "New", created.version() + 5)))
-                .isInstanceOf(StaleVersionException.class);
+                .isInstanceOfSatisfying(StaleVersionException.class, ex -> {
+                    assertThat(ex.current()).isInstanceOf(BoardSummary.class);
+                    assertThat(((BoardSummary) ex.current()).name()).isEqualTo("Old");
+                    assertThat(((BoardSummary) ex.current()).version()).isEqualTo(created.version());
+                });
         assertThat(repo.store.get(created.id()).name()).isEqualTo("Old");
     }
 

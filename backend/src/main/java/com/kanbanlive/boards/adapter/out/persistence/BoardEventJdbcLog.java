@@ -1,8 +1,12 @@
 package com.kanbanlive.boards.adapter.out.persistence;
 
+import com.kanbanlive.boards.application.port.in.BoardEventRecord;
 import com.kanbanlive.boards.application.port.out.BoardEventLog;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -34,5 +38,31 @@ class BoardEventJdbcLog implements BoardEventLog {
         jdbc.update("INSERT INTO board_event (board_id, seq, type, payload) VALUES (?, ?, ?, ?::jsonb)",
                 boardId, seq.get(0), type, payloadJson);
         return seq.get(0);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+    public Optional<Long> currentSeq(UUID boardId) {
+        return jdbc.queryForList("SELECT event_seq FROM board WHERE id = ?", Long.class, boardId).stream()
+                .findFirst();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+    public List<BoardEventRecord> findAfter(UUID boardId, long since, long upTo, int limit) {
+        return jdbc.query("SELECT seq, type, payload::text AS payload, created_at FROM board_event "
+                        + "WHERE board_id = ? AND seq > ? AND seq <= ? ORDER BY seq LIMIT ?",
+                (rs, i) -> new BoardEventRecord(boardId, rs.getLong("seq"), rs.getString("type"),
+                        rs.getString("payload"), rs.getTimestamp("created_at").toInstant()),
+                boardId, since, upTo, limit);
+    }
+
+    /** Transaccion propia por lote (REQUIRED): una purga larga no retiene locks. Usa idx_board_event_created_at. */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
+    public int deleteOlderThan(Instant cutoff, int batchSize) {
+        return jdbc.update("DELETE FROM board_event WHERE ctid IN ("
+                        + "SELECT ctid FROM board_event WHERE created_at < ? ORDER BY created_at LIMIT ?)",
+                Timestamp.from(cutoff), batchSize);
     }
 }

@@ -2,6 +2,7 @@ package com.kanbanlive.lists.adapter.out.persistence;
 
 import com.kanbanlive.lists.application.port.out.ListRepository;
 import com.kanbanlive.lists.domain.model.BoardList;
+import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import com.kanbanlive.sharedkernel.position.FractionalIndex;
 import com.kanbanlive.sharedkernel.position.PositionAssignment;
@@ -40,6 +41,15 @@ class ListPersistenceAdapter implements ListRepository {
         } catch (OptimisticLockingFailureException ex) {
             throw new StaleVersionException("list " + list.id() + " was modified concurrently");
         }
+    }
+
+    @Override
+    public BoardList saveMove(BoardList list) {
+        if (jpa.move(list.id(), list.position().value(), list.updatedAt()) == 0) {
+            throw new NotFoundException("list " + list.id() + " not found");
+        }
+        return jpa.findById(list.id()).map(mapper::toDomain)
+                .orElseThrow(() -> new NotFoundException("list " + list.id() + " not found"));
     }
 
     @Override

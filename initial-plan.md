@@ -426,7 +426,7 @@ Frontend:
 | 1 Dominio y REST | ⬜ |
 | 2 Auth multi-tenant | ⬜ |
 | 3 Tiempo real | ⬜ |
-| 4 Conflictos/reconexión | ⬜ |
+| 4 Conflictos/reconexión | 🟨 backend hecho (B4.1–B4.6, ADR-0005/0006); frontend pendiente |
 | 5 Presencia | ⬜ |
 | 6 Escalado | ⬜ |
 | 7 Rendimiento | ⬜ |

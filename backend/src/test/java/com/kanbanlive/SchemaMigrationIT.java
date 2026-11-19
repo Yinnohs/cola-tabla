@@ -28,6 +28,19 @@ class SchemaMigrationIT extends PostgresIT {
     }
 
     @Test
+    void v8AddsTheRetentionIndexOnBoardEventCreatedAt() {
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForObject(
+                "select count(*) from flyway_schema_history where success and version = '8'", Integer.class))
+                .isEqualTo(1);
+        List<String> defs = jdbc.queryForList(
+                "select indexdef from pg_indexes where tablename = 'board_event' "
+                        + "and indexname = 'idx_board_event_created_at'", String.class);
+        assertThat(defs).hasSize(1);
+        assertThat(defs.get(0)).contains("(created_at)");
+    }
+
+    @Test
     void positionColumnsUseCCollationAndIndexes() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         List<String> collations = jdbc.queryForList(

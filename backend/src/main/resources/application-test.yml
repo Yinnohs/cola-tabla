@@ -14,3 +14,8 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+kanban:
+  # Sin tareas en segundo plano en tests; el test del job lo activa explicitamente.
+  scheduling:
+    enabled: false

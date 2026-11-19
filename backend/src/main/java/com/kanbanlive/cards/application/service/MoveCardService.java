@@ -51,7 +51,7 @@ public class MoveCardService implements MoveCardUseCase {
                     .orElseThrow(() -> new NotFoundException("card " + command.cardId() + " not found"));
             position = allocate(card, command);
         }
-        CardSummary saved = CardSummaries.of(cards.save(card.moveTo(command.targetListId(), position, clock.now())));
+        CardSummary saved = CardSummaries.of(cards.saveMove(card.moveTo(command.targetListId(), position, clock.now())));
         events.moved(saved, fromListId);
         return saved;
     }

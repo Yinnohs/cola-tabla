@@ -12,6 +12,12 @@ public interface ListRepository {
 
     BoardList save(BoardList list);
 
+    /**
+     * Persiste un movimiento (posicion) con last-write-wins: UPDATE directo de una fila SIN comprobar la version
+     * cargada y con version+1 (ADR-0005). Nunca lanza StaleVersionException por concurrencia.
+     */
+    BoardList saveMove(BoardList list);
+
     Optional<BoardList> findById(UUID id);
 
     boolean existsById(UUID id);

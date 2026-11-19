@@ -1,9 +1,12 @@
 package com.kanbanlive.platform.web;
 
+import com.kanbanlive.sharedkernel.domain.BadRequestException;
 import com.kanbanlive.sharedkernel.domain.ConflictException;
 import com.kanbanlive.sharedkernel.domain.DomainException;
 import com.kanbanlive.sharedkernel.domain.ForbiddenException;
+import com.kanbanlive.sharedkernel.domain.GoneException;
 import com.kanbanlive.sharedkernel.domain.NotFoundException;
+import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import com.kanbanlive.sharedkernel.domain.ValidationException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -25,7 +28,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 /**
  * Traduce errores a RFC 7807 {@link ProblemDetail}. Todas las respuestas llevan la propiedad estable
- * {@code code} (contrato con el frontend): {@code NOT_FOUND}, {@code STALE_VERSION}, {@code CONFLICT},
+ * {@code code} (contrato con el frontend): {@code NOT_FOUND}, {@code STALE_VERSION} (con {@code current}), {@code CONFLICT}, {@code BAD_REQUEST}, {@code GONE},
  * {@code FORBIDDEN}, {@code VALIDATION}, {@code INTERNAL_ERROR}. Los errores propios de Spring MVC
  * (JSON malformado, 405, ...) los resuelve la clase base como ProblemDetail y se les anade {@code code}.
  */
@@ -34,6 +37,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     public static final String CODE = "code";
     public static final String ERRORS = "errors";
+    public static final String CURRENT = "current";
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundException.class)
@@ -44,7 +48,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** Incluye StaleVersionException (code STALE_VERSION). */
     @ExceptionHandler(ConflictException.class)
     ProblemDetail conflict(ConflictException ex) {
-        return problem(HttpStatus.CONFLICT, ex);
+        ProblemDetail pd = problem(HttpStatus.CONFLICT, ex);
+        if (ex instanceof StaleVersionException stale && stale.current() != null) {
+            // ADR-0005: el estado actual viaja en el 409 para que el cliente compare y reintente sin otro GET.
+            pd.setProperty(CURRENT, stale.current());
+        }
+        return pd;
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    ProblemDetail badRequest(BadRequestException ex) {
+        return problem(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    /** 410: p. ej. EVENTS_GONE, el cliente debe recargar el tablero completo. */
+    @ExceptionHandler(GoneException.class)
+    ProblemDetail gone(GoneException ex) {
+        return problem(HttpStatus.GONE, ex);
     }
 
     @ExceptionHandler(ForbiddenException.class)

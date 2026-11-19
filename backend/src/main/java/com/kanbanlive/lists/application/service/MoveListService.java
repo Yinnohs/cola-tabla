@@ -43,7 +43,7 @@ public class MoveListService implements MoveListUseCase {
                     .orElseThrow(() -> new NotFoundException("list " + command.listId() + " not found"));
             position = allocate(list, command);
         }
-        ListSummary saved = ListSummaries.of(lists.save(list.moveTo(position, clock.now())));
+        ListSummary saved = ListSummaries.of(lists.saveMove(list.moveTo(position, clock.now())));
         publisher.publish(saved.boardId(), "list.moved", java.util.Map.of("list", saved));
         return saved;
     }

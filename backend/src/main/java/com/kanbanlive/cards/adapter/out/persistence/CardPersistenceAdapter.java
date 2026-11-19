@@ -2,6 +2,7 @@ package com.kanbanlive.cards.adapter.out.persistence;
 
 import com.kanbanlive.cards.application.port.out.CardRepository;
 import com.kanbanlive.cards.domain.model.Card;
+import com.kanbanlive.sharedkernel.domain.NotFoundException;
 import com.kanbanlive.sharedkernel.domain.StaleVersionException;
 import com.kanbanlive.sharedkernel.position.FractionalIndex;
 import com.kanbanlive.sharedkernel.position.PositionAssignment;
@@ -40,6 +41,15 @@ class CardPersistenceAdapter implements CardRepository {
         } catch (OptimisticLockingFailureException ex) {
             throw new StaleVersionException("card " + card.id() + " was modified concurrently");
         }
+    }
+
+    @Override
+    public Card saveMove(Card card) {
+        if (jpa.move(card.id(), card.listId(), card.position().value(), card.updatedAt()) == 0) {
+            throw new NotFoundException("card " + card.id() + " not found");
+        }
+        return jpa.findById(card.id()).map(mapper::toDomain)
+                .orElseThrow(() -> new NotFoundException("card " + card.id() + " not found"));
     }
 
     @Override

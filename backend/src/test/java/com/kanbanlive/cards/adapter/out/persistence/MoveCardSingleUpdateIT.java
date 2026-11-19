@@ -112,7 +112,10 @@ class MoveCardSingleUpdateIT extends PostgresIT {
 
         List<String> updates = SqlStatementRecorder.statementsStartingWith("update");
         assertThat(updates).hasSize(1);
-        assertThat(updates.get(0)).startsWith("update card set").contains("where id=? and version=?");
+        assertThat(updates.get(0)).startsWith("update card set").contains("where id = ?")
+                // B4.4: mover es last-write-wins, sin clausula de version en el WHERE
+                .doesNotContain("and version")
+                .contains("version = version + 1");
         assertThat(SqlStatementRecorder.statementsStartingWith("insert")).isEmpty();
         assertThat(SqlStatementRecorder.statementsStartingWith("delete")).isEmpty();
 
