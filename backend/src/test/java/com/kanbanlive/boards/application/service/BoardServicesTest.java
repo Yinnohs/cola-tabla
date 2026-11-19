@@ -141,10 +141,17 @@ class BoardServicesTest {
     @Test
     void getBoardReturnsReaderResultOrNotFound() {
         UUID id = UUID.randomUUID();
-        BoardDetails details = new BoardDetails(id, ws, "B", 0, List.of());
+        BoardDetails details = new BoardDetails(id, ws, "B", 0, 0, List.of());
         GetBoardService get = new GetBoardService(boardId -> boardId.equals(id) ? Optional.of(details) : Optional.empty());
         assertThat(get.execute(id)).isSameAs(details);
         assertThatThrownBy(() -> get.execute(UUID.randomUUID())).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void getBoardReadsStateAndLastSeqInOneRepeatableReadSnapshot() {
+        var tx = GetBoardService.class.getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+        assertThat(tx.readOnly()).isTrue();
+        assertThat(tx.isolation()).isEqualTo(org.springframework.transaction.annotation.Isolation.REPEATABLE_READ);
     }
 
     @Test

@@ -16,6 +16,11 @@ import org.springframework.stereotype.Repository;
 /**
  * Proyeccion de solo lectura sobre {@code board}, {@code board_list} y {@code card}. Lee las tablas por SQL
  * (sin tocar dominio ni adapters de lists/cards). Orden por {@code position} (columna COLLATE "C").
+ * <p>
+ * Consistencia con {@code lastSeq}: se lee {@code board.event_seq} en la MISMA consulta que el tablero y, como
+ * las tres lecturas van en una transaccion {@code REPEATABLE_READ} (ver {@code GetBoardService}), listas y
+ * tarjetas salen de la misma instantanea. Las escrituras suben {@code event_seq} y cambian listas/tarjetas en
+ * una unica transaccion, asi que la instantanea contiene exactamente los eventos {@code seq <= lastSeq}.
  */
 @Repository
 class BoardDetailsJdbcReader implements BoardDetailsReader {
@@ -29,9 +34,9 @@ class BoardDetailsJdbcReader implements BoardDetailsReader {
     @Override
     public Optional<BoardDetails> findById(UUID boardId) {
         List<BoardRow> boards = jdbc.query(
-                "select id, workspace_id, name, version from board where id = ?",
+                "select id, workspace_id, name, version, event_seq from board where id = ?",
                 (rs, i) -> new BoardRow(rs.getObject("id", UUID.class), rs.getObject("workspace_id", UUID.class),
-                        rs.getString("name"), rs.getLong("version")),
+                        rs.getString("name"), rs.getLong("version"), rs.getLong("event_seq")),
                 boardId);
         if (boards.isEmpty()) {
             return Optional.empty();
@@ -59,9 +64,10 @@ class BoardDetailsJdbcReader implements BoardDetailsReader {
                 },
                 boardId);
 
-        return Optional.of(new BoardDetails(board.id(), board.workspaceId(), board.name(), board.version(), lists));
+        return Optional.of(new BoardDetails(board.id(), board.workspaceId(), board.name(), board.version(), board.lastSeq(),
+                lists));
     }
 
-    private record BoardRow(UUID id, UUID workspaceId, String name, long version) {
+    private record BoardRow(UUID id, UUID workspaceId, String name, long version, long lastSeq) {
     }
 }

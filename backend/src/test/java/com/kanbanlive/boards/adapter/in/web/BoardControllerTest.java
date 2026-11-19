@@ -97,12 +97,13 @@ class BoardControllerTest {
     void getReturnsBoardWithListsAndCards() throws Exception {
         UUID list = UUID.randomUUID();
         UUID card = UUID.randomUUID();
-        when(getBoard.execute(id)).thenReturn(new BoardDetails(id, ws, "Sprint", 2, List.of(
+        when(getBoard.execute(id)).thenReturn(new BoardDetails(id, ws, "Sprint", 2, 7, List.of(
                 new ListDetails(list, "Todo", "V", 1, List.of(new CardDetails(card, "T", null, "V", 0))))));
 
         mvc.perform(get("/api/boards/{id}", id).with(jwt()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.version").value(2))
+                .andExpect(jsonPath("$.lastSeq").value(7))
                 .andExpect(jsonPath("$.lists[0].name").value("Todo"))
                 .andExpect(jsonPath("$.lists[0].cards[0].title").value("T"));
     }

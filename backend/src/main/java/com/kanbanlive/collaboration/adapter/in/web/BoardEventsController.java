@@ -23,6 +23,7 @@ class BoardEventsController {
 
     @Operation(operationId = "getBoardEvents",
             summary = "Eventos del tablero con seq > since (resync tras una desconexion)")
+    @ApiResponse(responseCode = "200", description = "Eventos con seq > since, en orden, y el lastSeq actual")
     @ApiResponse(responseCode = "400", description = "since negativo o mayor que el seq actual (code INVALID_SINCE)")
     @ApiResponse(responseCode = "410", description = "Demasiado atrasado o log purgado: recargar el tablero (code EVENTS_GONE)")
     @PreAuthorize("@perms.canView(#boardId)")

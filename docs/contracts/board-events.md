@@ -84,10 +84,15 @@ Cada mensaje del topic es un JSON:
 - Un evento solo se difunde **después del commit** de la transacción que lo produce: un rollback no emite nada ni
   consume `seq`.
 - Todos los eventos quedan también en la tabla `board_event(board_id, seq, type, payload, created_at)`.
-- Algoritmo del cliente con `lastSeq` (el `seq` de la última carga completa del tablero o el último aplicado):
+- `GET /api/boards/{boardId}` devuelve `lastSeq`: el `seq` del último evento incluido en la carga. Se lee de
+  `board.event_seq` en la **misma instantánea** (transacción `REPEATABLE_READ` de solo lectura) que el tablero, las
+  listas y las tarjetas, así que el estado contiene exactamente los eventos con `seq <= lastSeq`. Un tablero sin
+  eventos devuelve `0`. El cliente reanuda desde `lastSeq + 1`.
+- Algoritmo del cliente con `lastSeq` (el de la última carga completa del tablero o el `seq` del último aplicado):
   - `seq == lastSeq + 1`: aplicar y avanzar.
   - `seq <= lastSeq`: ignorar (duplicado o ya incluido en la carga).
   - `seq > lastSeq + 1`: hay un hueco, recargar el tablero completo (`GET /api/boards/{boardId}`) y reanudar.
+  - Un `type` desconocido o un `schemaVersion` distinto de `1` no se puede aplicar: recargar el tablero.
 - Si la difusión falla tras el commit, el cambio persiste y el hueco se detecta por `seq`.
 
 ## Resincronización por `since` (Fase 4, ADR-0005)
@@ -111,4 +116,6 @@ Cada mensaje del topic es un JSON:
 - El servidor lo devuelve tal cual en `clientId`; un valor ausente o inválido se descarta (`null`).
 - El cliente que envió la petición ya aplicó el cambio de forma optimista: al recibir un evento con su propio
   `clientId` **no lo reaplica**, pero sí avanza `lastSeq`.
+- El frontend lo genera con `crypto.randomUUID()` (normalizado al formato), en memoria por pestaña, y lo envía en las
+  peticiones de escritura (no en los `GET`).
 - `clientId` no es una credencial ni prueba de identidad.

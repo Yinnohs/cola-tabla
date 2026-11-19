@@ -67,6 +67,25 @@ class EventsResyncIT extends SecuredApiIT {
     }
 
     @Test
+    void getBoardCarriesLastSeqMatchingTheLogAndTheLoadedState() throws Exception {
+        String alice = user("alice");
+        UUID board = board(alice);
+        JsonNode empty = mapper.readTree(mvc.perform(get("/api/boards/{id}", board).with(as(alice)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(empty.get("lastSeq").asLong()).isZero();
+
+        UUID list = createList(alice, board); // seq 1
+        createCard(alice, list); // seq 2
+
+        JsonNode loaded = mapper.readTree(mvc.perform(get("/api/boards/{id}", board).with(as(alice)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(loaded.get("lastSeq").asLong()).isEqualTo(2);
+        assertThat(loaded.at("/lists/0/cards")).hasSize(1);
+        // reanudar desde lastSeq no devuelve nada: el estado ya incluye todos los eventos hasta lastSeq
+        assertThat(events(alice, board, "2", 200).get("events")).isEmpty();
+    }
+
+    @Test
     void sinceEqualToTheCurrentSeqReturnsAnEmptyList() throws Exception {
         String alice = user("alice");
         UUID board = board(alice);

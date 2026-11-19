@@ -86,6 +86,17 @@ class BoardPersistenceAdapterIT extends PostgresIT {
     }
 
     @Test
+    void detailsCarryTheBoardEventSeqAsLastSeq() {
+        UUID boardId = UUID.randomUUID();
+        adapter.save(Board.create(boardId, workspaceId, "Board", NOW));
+        assertThat(reader.findById(boardId).orElseThrow().lastSeq()).isZero();
+
+        jdbc.update("update board set event_seq = 41 where id = ?", boardId);
+
+        assertThat(reader.findById(boardId).orElseThrow().lastSeq()).isEqualTo(41);
+    }
+
+    @Test
     void existsByIdReflectsPersistedBoards() {
         UUID id = UUID.randomUUID();
         adapter.save(Board.create(id, workspaceId, "B", NOW));
