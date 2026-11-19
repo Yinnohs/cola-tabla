@@ -30,10 +30,14 @@ El WebSocket solo notifica; la BD es la verdad. Los clientes necesitan detectar 
 ## Consecuencias
 
 - Positivas: detección exacta de huecos; resync barato desde `board_event`; mismo mecanismo con Redis (Fase 6).
-- Negativas / deuda aceptada: serialización de escrituras por tablero; el log crece (política de retención pendiente).
+- Negativas / deuda aceptada: serialización de escrituras por tablero; el log crece (la política de retención se definió después en ADR-0005).
 - Cómo se verifica: `BoardEventJdbcLogIT` (seq por tablero sin huecos, tx obligatoria, jsonb, unicidad); test de rollback en B3.7.
+
+## Nota de actualización (2026-11-19)
+
+Los dos pendientes de esta decisión quedaron resueltos en ADR posteriores, sin cambiar lo decidido aquí: la política de retención del log está en ADR-0005 (apartado 4) y la renovación/expiración del JWT en WebSocket en ADR-0006.
 
 ## Referencias
 
 - `todos/back/fase-3-tiempo-real.md` (B3.3)
-- ADR-0006 pendiente (renovación de JWT en WebSocket)
+- ADR-0006 (renovación de JWT en WebSocket) y ADR-0005 (retención del log)

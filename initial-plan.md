@@ -408,25 +408,30 @@ Frontend:
 
 ## 10. Decisiones a documentar como ADR
 
-| ADR | Tema |
-| --- | --- |
-| 0001 | Hexagonal + screaming (backend) y feature slices (frontend) |
-| 0002 | Modelo de dominio separado de entidades JPA |
-| 0003 | Fractional indexing (LexoRank-like) y rebalanceo |
-| 0004 | Secuencia por tablero asignada en la transacción + `board_event` log |
-| 0005 | Estrategia de conflictos (LWW para mover, 409 para editar) |
-| 0006 | Renovación de JWT en WebSocket |
-| 0007 | Redis pub/sub vs RabbitMQ relay |
+| ADR | Tema | Estado |
+| --- | --- | --- |
+| 0001 | Hexagonal + screaming (backend) y feature slices (frontend) | Aceptado |
+| 0002 | Modelo de dominio separado de entidades JPA | Aceptado |
+| 0003 | Fractional indexing (LexoRank-like) y rebalanceo | Aceptado |
+| 0004 | Sin `useEffect` en el frontend | Aceptado |
+| 0005 | Estrategia de conflictos (LWW para mover, 409 para editar) y retención del log | Aceptado |
+| 0006 | Renovación/expiración de JWT en WebSocket | Aceptado |
+| 0007 | Redis pub/sub vs RabbitMQ relay | Pendiente (Fase 6) |
+| 0008 | Secuencia por tablero asignada en la transacción + `board_event` log | Aceptado |
+| 0009 | Autenticación de la SPA (OIDC + PKCE), 401/403 globales y rol en la UI | Aceptado |
+| 0010 | Tiempo real en el cliente (STOMP + store externo sin `useEffect`) y `lastSeq` en la carga | Aceptado |
+
+Fuente de verdad: `docs/adr/README.md`.
 
 ## 11. Estado actual (actualizar al avanzar)
 
 | Fase | Estado |
 | --- | --- |
-| 0 Base | ⬜ pendiente |
-| 1 Dominio y REST | ⬜ |
+| 0 Base | 🟨 casi completa: backend y frontend implementados; falta la tarea B0.12 (verificar DoD: `docker compose up` completo + CI verde en un PR de prueba) |
+| 1 Dominio y REST | ✅ backend (B1.x) + frontend (F1.x): CRUD de workspaces, tableros, listas y tarjetas con fractional indexing |
 | 2 Auth multi-tenant | ✅ backend (B2.1–B2.7) + frontend (F2.1–F2.8, ADR-0009): login OIDC, 401/403, UI por rol, gestión de miembros (`role` en workspace, `GET`/`DELETE` miembros) |
 | 3 Tiempo real | ✅ backend (B3.1–B3.9, ADR-0008) + frontend (F3.1–F3.9, ADR-0010): STOMP + `sequence-tracker`, `lastSeq` en `GET /api/boards/{id}`, e2e Playwright de dos navegadores |
-| 4 Conflictos/reconexión | 🟨 backend hecho (B4.1–B4.6, ADR-0005/0006); frontend pendiente |
+| 4 Conflictos/reconexión | 🟨 backend hecho (B4.1–B4.6, ADR-0005/0006); frontend pendiente (todas las tareas F4.x sin marcar) |
 | 5 Presencia | ⬜ |
 | 6 Escalado | ⬜ |
 | 7 Rendimiento | ⬜ |

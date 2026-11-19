@@ -16,8 +16,11 @@ vuelve a cargar `GET /api/boards/{boardId}`.
   mostrar "sin acceso".
 - Cualquier otro destino `/topic/**` se rechaza igual. Los clientes solo pueden enviar a `/app/**`
   (un `SEND` a `/topic/...` se rechaza).
-- El token solo se valida al conectar. Qué ocurre cuando expira con el socket abierto se decide en Fase 4
-  (B4.5); el backend deja el punto de extensión `SocketTokenLifecycle` (`platform.messaging`).
+- El token se valida al conectar y su caducidad se vigila con el socket abierto (ADR-0006): al vencer el `exp`, el
+  servidor envía un frame `ERROR` (`message: Token expired`) y cierra la conexión (`SocketTokenLifecycle`,
+  `platform.messaging`); `SUBSCRIBE` y `SEND` con token vencido también se rechazan. El cliente renueva el token
+  unos ~60 s antes del `exp` (con jitter), abre una conexión nueva, se suscribe de nuevo y cierra la anterior; si no
+  lo logra, reconecta con backoff y no debe reintentar con el mismo token vencido.
 
 ## Envelope
 
