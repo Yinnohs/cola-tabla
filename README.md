@@ -18,44 +18,69 @@ todos/              Tareas por fase (back/ y front/)
 
 ## Cómo levantar
 
-Requisitos: Docker, JDK 21, Node LTS (20+).
+Requisitos: Docker (con Compose v2), JDK 21 (`JAVA_HOME` apuntando a él) y Node LTS (20+). Puertos libres: 5432, 6379, 8080, 8180, 5173 (y 8000 con el perfil `app`).
 
-### Infraestructura (Postgres, Redis, Keycloak, Nginx)
+### Inicio rápido (desarrollo local, 3 terminales)
+
+La SPA exige login (OIDC), así que el backend **debe** correr con seguridad activada.
 
 ```
-docker compose -f infra/docker-compose.yml up -d
+# 1. Infra: Postgres, Redis, Keycloak (esperar a que http://localhost:8180/realms/kanban responda)
+docker compose -f infra/docker-compose.yml up -d postgres redis keycloak
+
+# 2. Backend (:8080) con JWT real
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.arguments=--kanban.security.enabled=true
+
+# 3. Frontend (:5173; Vite proxea /api y /ws a :8080)
+cd frontend
+npm ci
+cp .env.example .env.local   # opcional: los valores por defecto ya apuntan al Keycloak de desarrollo
+npm run dev
 ```
+
+Abre http://localhost:5173 e inicia sesión con `owner`/`owner`, `editor`/`editor` o `viewer`/`viewer`. El rol dentro de cada workspace sale de la membresía (no de Keycloak): el owner crea el workspace y añade miembros. Para ver el tiempo real, abre el mismo tablero con dos usuarios en navegadores distintos (o una ventana privada).
+
+### Stack completo en contenedores
+
+```
+docker compose -f infra/docker-compose.yml --profile app up -d --build
+```
+
+Sirve todo en http://localhost:8000 (Nginx -> frontend + `/api` + `/ws`), con JWT validado contra Keycloak.
+
+Servicios de `infra/docker-compose.yml`:
 
 - Postgres: `localhost:5432` (db/user/password `kanban`)
 - Redis: `localhost:6379`
 - Keycloak: http://localhost:8180 (admin/admin; realm `kanban` importado)
-- Nginx: http://localhost:8000 (proxy a backend/frontend; **solo arranca con el perfil `app`**; el backend local usa 8080)
+- Nginx: http://localhost:8000 (**solo con el perfil `app`**)
 
-Usuarios de desarrollo del realm `kanban`: `owner`, `editor`, `viewer` (contraseña = nombre de usuario).
+Usuarios de desarrollo del realm `kanban`: `owner`, `editor`, `viewer` (contraseña = nombre de usuario). Clientes: `kanban-web` (SPA, Authorization Code + PKCE, redirects `:5173` y `:8000`), `kanban-dev-cli` (password grant, solo para pruebas) y `kanban-api`.
 
-Para levantar también backend y frontend en contenedores: `docker compose -f infra/docker-compose.yml --profile app up -d --build`.
+Parar: `docker compose -f infra/docker-compose.yml --profile app down` (añade `-v` para borrar los datos).
 
 ### Backend
 
 ```
 cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local   # sin seguridad (ver abajo)
 ./mvnw verify          # compila y ejecuta tests (unitarios + IT con Testcontainers; requiere Docker)
 ```
+
+Las migraciones Flyway se aplican solas al arrancar.
 
 OpenAPI/Swagger UI (perfiles `local` y `docker`): http://localhost:8080/swagger-ui.html · spec en http://localhost:8080/v3/api-docs.
 
 Seguridad por perfil:
 
-- `local` (`mvnw spring-boot:run`): **sin seguridad** (`kanban.security.enabled: false`), todo responde sin token.
+- `local` (por defecto, `kanban.security.enabled: false`): sin seguridad, todo responde sin token. Útil para curl/Swagger, **no** para usar la SPA. Actívala con `--kanban.security.enabled=true`.
 - `docker` (backend en contenedor, `--profile app`): **JWT validado** contra Keycloak; `KANBAN_SECURITY_ENABLED=false` la desactiva.
 
-Token para probar (cliente de desarrollo `kanban-dev-cli`, usuarios `owner`/`editor`/`viewer`):
+Token para probar con la seguridad activada (cliente `kanban-dev-cli`):
 
 ```
-TOKEN=$(curl -s -X POST http://localhost:8180/realms/kanban/protocol/openid-connect/token \
-  -d grant_type=password -d client_id=kanban-dev-cli -d username=owner -d password=owner \
-  | sed -E 's/.*"access_token":"([^"]+)".*/\1/')
+TOKEN=$(curl -s -X POST http://localhost:8180/realms/kanban/protocol/openid-connect/token   -d grant_type=password -d client_id=kanban-dev-cli -d username=owner -d password=owner   | sed -E 's/.*"access_token":"([^"]+)".*//')
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/workspaces
 ```
 
@@ -70,7 +95,30 @@ cd frontend
 npm ci
 npm run dev            # http://localhost:5173
 npm run lint && npm run typecheck && npm test
+npm run build          # tsc + build de producción
+npm run depcruise      # reglas de dependencias hexagonales
 ```
+
+Variables (`frontend/.env.example`, copiar a `.env.local`): `VITE_API_BASE_URL`, `VITE_WS_URL`, `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_REDIRECT_URI`, `VITE_OIDC_POST_LOGOUT_REDIRECT_URI`. Todas son opcionales en desarrollo.
+
+### Tests E2E (tiempo real)
+
+Con infra + backend (seguridad activada) + `npm run dev` ya levantados:
+
+```
+cd frontend
+npm run e2e:install    # solo la primera vez (Chromium)
+npm run e2e
+```
+
+Detalle en [`frontend/e2e/README.md`](frontend/e2e/README.md).
+
+### Problemas frecuentes
+
+- **401 en todas las llamadas desde la SPA**: el backend está sin seguridad o sin Keycloak listo; arranca con `--kanban.security.enabled=true` tras esperar a Keycloak.
+- **Login falla con `not_allowed` (offline tokens)**: volumen de Keycloak con un realm antiguo; recréalo (ver arriba).
+- **`mvnw verify` falla al conectar a Docker**: los IT usan Testcontainers, Docker debe estar corriendo.
+- **Puerto ocupado**: libera 5432/6379/8080/8180/5173 o detén otros Postgres/Redis locales.
 
 ## Documentación
 
